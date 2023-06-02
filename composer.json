@@ -3,9 +3,6 @@
         "nyholm/psr7": "^1.4",
         "nyholm/psr7-server": "^1.0",
         "kriswallsmith/buzz": "^1.2",
-        "graphaware/neo4j-php-client": "^4.8",
-        "graphaware/neo4j-php-ogm": "dev-master",
-        "graphaware/neo4j-bolt": "^1.11",
-        "mongodb/mongodb": "^1.11"
+        "graphaware/neo4j-php-client": "^4.0"
     }
 }
