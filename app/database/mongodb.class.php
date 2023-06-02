@@ -1,4 +1,5 @@
 <?php
+
 class mongoDB{
     private static $manager = null;
     private function __construct(){}
@@ -6,7 +7,7 @@ class mongoDB{
     public static function getConnection(){
         if(mongoDB::$manager === null){
             try{
-                $mongoClient = new MongoDB\Client("mongodb://localhost:27017");
+                $mongoClient = new MongoDB\Client("mongodb://localhost");
                 $database = $mongoClient->selectDatabase("DATABASE_NAME");
                 mongoDB::$manager = $database;
             }

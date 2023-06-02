@@ -17,12 +17,19 @@ class loginController extends BaseController{
 
     function processRegister()
     {
-        echo "<script> console.log('" . $_POST['register'] . "'); </script>";
+        
     }
 
     function processLogin()
     {
-        echo "<script> console.log('" . $_POST['login'] . "'); </script>";
+        $username = $_POST["username"];
+        $password = $_POST["password"];
+
+        // trivijalna logika, samo za probu
+        if($username === 'Matej' && $password ==='12345'){
+            $_SESSION["user"] = $username;
+            header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
+        }
     }
 }
 
