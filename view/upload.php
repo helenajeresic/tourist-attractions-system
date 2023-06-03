@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +7,7 @@
     <title>Upload</title>
 </head>
 <body>
-    <form action="<?php echo __SITE_URL . 'index.php?rt=upload/processUpdate'?>" method="post" enctype="multipart/form/data">
+    <form action="<?php echo __SITE_URL . 'index.php?rt=upload/processUpdate'?>" method="post" enctype="multipart/form-data">
         <input type="file" name="file">
         <input type="submit" value="Upload">
     </form>

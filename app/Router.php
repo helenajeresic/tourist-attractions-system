@@ -28,7 +28,6 @@ class Router
 
     public function loader()
     {
-        error_log("pokusavam getati controller");
         $this->getController();
         if (is_readable($this->file) === false) {
             $this->file = $this->path . '/_404Controller.php';
@@ -54,7 +53,6 @@ class Router
 
         if (!empty($route))
         {
-            error_log("ruta je ". $route);
             $parts = explode('/', $route);
             $this->controller = ucfirst($parts[0]);
             if (isset($parts[1]))
@@ -66,6 +64,5 @@ class Router
             $this->action = 'index';
 
         $this->file = $this->path . '/' . $this->controller . 'Controller.php';
-        error_log("file je ". $this->file);
     }
 }
