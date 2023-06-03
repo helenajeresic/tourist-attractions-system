@@ -14,4 +14,5 @@ $s3 = new S3Client([
         'secret' => $config['s3']['secret']
     ]
 ]);
+
 ?>
