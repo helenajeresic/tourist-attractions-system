@@ -4,6 +4,7 @@
         "nyholm/psr7-server": "^1.0",
         "kriswallsmith/buzz": "^1.2",
         "graphaware/neo4j-php-client": "^4.0",
-        "mongodb/mongodb": "^1.11"
+        "mongodb/mongodb": "^1.11",
+        "aws/aws-sdk-php": "^3.271"
     }
 }
