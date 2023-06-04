@@ -1,23 +1,30 @@
 ## Neo4j Bolt PHP
 
-PHP low level Driver for Neo4j's Bolt Remoting Protocol
+PHP Driver for Neo4j's Bolt Remoting Protocol
 
 [![Build Status](https://travis-ci.org/graphaware/neo4j-bolt-php.svg?branch=master)](https://travis-ci.org/graphaware/neo4j-bolt-php)
 
 ---
 
+### DEV MODE
+
+This library will remain in 1.0.0-dev version until stable release of Neo4j's Bolt.
+
+---
+
 ### References :
 
-* PHP Client embedding Bolt along with the http driver (recommended way of using Neo4j in PHP) : https://github.com/graphaware/neo4j-php-client
-* Neo4j 3.0 : http://neo4j.com/docs
+* Documentation : http://remoting.neotechnology.com.s3-website-eu-west-1.amazonaws.com
+* Python driver : https://github.com/neo4j/neo4j-python-driver
+* Bolt How-To : https://github.com/nigelsmall/bolt-howto
+* Java Driver : https://github.com/neo4j/neo4j-java-driver
+* Neo4j 3.0-RC1 : http://neo4j.com
 
 ### Requirements:
 
 * PHP5.6+
 * Neo4j3.0
 * PHP Sockets extension available
-* `bcmath` extension
-* `mbstring` extension
 
 ### Installation
 
@@ -47,51 +54,6 @@ $session->close();
 // with parameters :
 
 $session->run("CREATE (n) SET n += {props}", ['name' => 'Mike', 'age' => 27]);
-```
-
-### Empty Arrays
-
-Due to lack of Collections types in php, there is no way to distinguish when an empty array
-should be treated as equivalent Java List or Map types.
-
-Therefore you can use a wrapper around arrays for type safety :
-
-```php
-use GraphAware\Common\Collections;
-
-        $query = 'MERGE (n:User {id: {id} }) 
-        WITH n
-        UNWIND {friends} AS friend
-        MERGE (f:User {id: friend.name})
-        MERGE (f)-[:KNOWS]->(n)';
-
-        $params = ['id' => 'me', 'friends' => Collections::asList([])];
-        $this->getSession()->run($query, $params);
-        
-// Or
-
-        $query = 'MERGE (n:User {id: {id} }) 
-        WITH n
-        UNWIND {friends}.users AS friend
-        MERGE (f:User {id: friend.name})
-        MERGE (f)-[:KNOWS]->(n)';
-
-        $params = ['id' => 'me', 'friends' => Collections::asMap([])];
-        $this->getSession()->run($query, $params);
-
-```
-
-### TLS Encryption
-
-In order to enable TLS support, you need to set the configuration option to `REQUIRED`, here an example :
-
-```php
-$config = \GraphAware\Bolt\Configuration::newInstance()
-    ->withCredentials('bolttest', 'L7n7SfTSj0e6U')
-    ->withTLSMode(\GraphAware\Bolt\Configuration::TLSMODE_REQUIRED);
-
-$driver = \GraphAware\Bolt\GraphDatabase::driver('bolt://hobomjfhocgbkeenl.dbs.graphenedb.com:24786', $config);
-$session = $driver->session();
 ```
 
 ### License

@@ -12,40 +12,21 @@ class Configuration implements ConfigInterface
     protected $timeout;
 
     /**
-     * @var string
+     * Configuration constructor.
+     * @param int $timeout
      */
-    protected $curlInterface;
-
-    /**
-     * @return Configuration
-     */
-    public static function create()
+    public function __construct($timeout)
     {
-        return new self();
+        $this->timeout = (int) $timeout;
     }
 
     /**
      * @param int $timeout
-     *
-     * @return Configuration
+     * @return \GraphAware\Neo4j\Client\HttpDriver\Configuration
      */
-    public function withTimeout($timeout)
+    public static function withTimeout($timeout)
     {
-        $this->timeout = $timeout;
-
-        return $this;
-    }
-
-    /**
-     * @param string $interface
-     *
-     * @return $this
-     */
-    public function withCurlInterface($interface)
-    {
-        $this->curlInterface = $interface;
-
-        return $this;
+        return new self($timeout);
     }
 
     /**
@@ -56,11 +37,5 @@ class Configuration implements ConfigInterface
         return $this->timeout;
     }
 
-    /**
-     * @return string
-     */
-    public function getCurlInterface()
-    {
-        return $this->curlInterface;
-    }
+
 }

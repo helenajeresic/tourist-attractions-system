@@ -1,18 +1,28 @@
 <?php
 
+require_once 'model/sight.class.php';
+require_once 'model/sightService.class.php';
+
 class sightsController extends BaseController{
     public function index(){
-        if(!isset($_SESSION["user"])){
+        /*if(!isset($_SESSION["user"])){
             $this->registry->template->title = "Login";
             $this->registry->template->error = false;
             $this->registry->template->show("login");
         }
-        else{
+        else{*/
             $this->registry->template->title = "Sights";
             $this->registry->template->error = false;
+
+            $ss = new SightService();
+            $data = $ss->getAllSights();
+            $this->registry->template->data = $data;
+  
             $this->registry->template->show("sights");
-        }
+        /*}*/
     }
+
+
 }
 
 

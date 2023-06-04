@@ -13,8 +13,8 @@ namespace GraphAware\Bolt\Record;
 
 use GraphAware\Common\Result\RecordViewInterface;
 use GraphAware\Common\Type\Node;
-use GraphAware\Common\Type\Path;
-use GraphAware\Common\Type\Relationship;
+use GraphAware\Common\Type\PathInterface;
+use GraphAware\Common\Type\RelationshipInterface;
 
 class RecordView implements RecordViewInterface
 {
@@ -34,21 +34,7 @@ class RecordView implements RecordViewInterface
     private $keyToIndexMap = [];
 
     /**
-     * @param array $keys
-     * @param array $values
-     */
-    public function __construct(array $keys, array $values)
-    {
-        $this->keys = $keys;
-        $this->values = $values;
-
-        foreach ($this->keys as $i => $k) {
-            $this->keyToIndexMap[$k] = $i;
-        }
-    }
-
-    /**
-     * {@inheritdoc}
+     * @return array
      */
     public function keys()
     {
@@ -56,7 +42,21 @@ class RecordView implements RecordViewInterface
     }
 
     /**
-     * {@inheritdoc}
+     * RecordView constructor.
+     * @param array $keys
+     * @param array $values
+     */
+    public function __construct(array $keys, array $values)
+    {
+        $this->keys = $keys;
+        $this->values = $values;
+        foreach ($this->keys as $i => $k) {
+            $this->keyToIndexMap[$k] = $i;
+        }
+    }
+
+    /**
+     * @return bool
      */
     public function hasValues()
     {
@@ -65,7 +65,6 @@ class RecordView implements RecordViewInterface
 
     /**
      * @param $key
-     *
      * @return mixed|\GraphAware\Bolt\Result\Type\Node|\GraphAware\Bolt\Result\Type\Relationship|\GraphAware\Bolt\Result\Type\Path
      */
     public function value($key)
@@ -74,25 +73,18 @@ class RecordView implements RecordViewInterface
     }
 
     /**
-     * @param string $key
-     * @param mixed  $defaultValue
-     *
+     * @param $key
      * @return \GraphAware\Bolt\Result\Type\Node|\GraphAware\Bolt\Result\Type\Path|\GraphAware\Bolt\Result\Type\Relationship|mixed
      */
-    public function get($key, $defaultValue = null)
+    public function get($key)
     {
-        if (!isset($this->keyToIndexMap[$key]) && 2 === func_num_args()) {
-            return $defaultValue;
-        }
-
         return $this->value($key);
     }
 
     /**
-     * Returns the Node for value <code>$key</code>. Ease IDE integration.
+     * Returns the Node for value <code>$key</code>. Ease IDE integration
      *
      * @param $key
-     *
      * @return \GraphAware\Bolt\Result\Type\Node
      *
      * @throws \InvalidArgumentException When the value is not null or instance of Node
@@ -108,14 +100,13 @@ class RecordView implements RecordViewInterface
 
     /**
      * @param $key
-     *
      * @return \GraphAware\Bolt\Result\Type\Relationship
      *
      * @throws \InvalidArgumentException When the value is not null or instance of Relationship
      */
     public function relationshipValue($key)
     {
-        if (!isset($this->keyToIndexMap[$key]) || !$this->values[$this->keyToIndexMap[$key]] instanceof Relationship) {
+        if (!isset($this->keyToIndexMap[$key]) || !$this->values[$this->keyToIndexMap[$key]] instanceof RelationshipInterface) {
             throw new \InvalidArgumentException(sprintf('value for %s is not of type %s', $key, 'RELATIONSHIP'));
         }
 
@@ -124,14 +115,13 @@ class RecordView implements RecordViewInterface
 
     /**
      * @param $key
-     *
      * @return \GraphAware\Bolt\Result\Type\Path
      *
      * @throws \InvalidArgumentException When the value is not null or instance of Path
      */
     public function pathValue($key)
     {
-        if (!isset($this->keyToIndexMap[$key]) || !$this->values[$this->keyToIndexMap[$key]] instanceof Path) {
+        if (!isset($this->keyToIndexMap[$key]) || !$this->values[$this->keyToIndexMap[$key]] instanceof PathInterface) {
             throw new \InvalidArgumentException(sprintf('value for %s is not of type %s', $key, 'PATH'));
         }
 
@@ -139,7 +129,7 @@ class RecordView implements RecordViewInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return array
      */
     public function values()
     {
@@ -147,7 +137,8 @@ class RecordView implements RecordViewInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $key
+     * @return bool
      */
     public function hasValue($key)
     {
@@ -155,7 +146,8 @@ class RecordView implements RecordViewInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param $index
+     * @return mixed
      */
     public function valueByIndex($index)
     {
@@ -163,7 +155,8 @@ class RecordView implements RecordViewInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param $index
+     * @return mixed
      */
     public function getByIndex($index)
     {
@@ -171,10 +164,11 @@ class RecordView implements RecordViewInterface
     }
 
     /**
-     * @return RecordView
+     * @return \GraphAware\Bolt\Record\RecordView
      */
     public function record()
     {
-        return clone $this;
+        return clone($this);
     }
+
 }

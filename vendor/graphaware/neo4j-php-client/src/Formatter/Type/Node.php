@@ -8,9 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace GraphAware\Neo4j\Client\Formatter\Type;
 
-use GraphAware\Common\Type\Node as NodeInterface;
+use GraphAware\Common\Type\NodeInterface;
 
 class Node extends MapAccess implements NodeInterface
 {
@@ -25,10 +26,10 @@ class Node extends MapAccess implements NodeInterface
     protected $labels = [];
 
     /**
-     * @param int   $id
-     * @param array $labels
-     * @param array $properties
+     * @var array
      */
+    protected $properties = [];
+
     public function __construct($id, array $labels, array $properties)
     {
         $this->id = $id;
@@ -37,7 +38,7 @@ class Node extends MapAccess implements NodeInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return int
      */
     public function identity()
     {
@@ -45,7 +46,7 @@ class Node extends MapAccess implements NodeInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return string[]
      */
     public function labels()
     {
@@ -53,7 +54,9 @@ class Node extends MapAccess implements NodeInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $label
+     *
+     * @return bool
      */
     public function hasLabel($label)
     {

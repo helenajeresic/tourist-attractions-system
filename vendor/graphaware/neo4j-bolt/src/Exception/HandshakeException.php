@@ -11,6 +11,4 @@
 
 namespace GraphAware\Bolt\Exception;
 
-class HandshakeException extends \RuntimeException implements BoltExceptionInterface
-{
-}
+class HandshakeException extends \RuntimeException implements BoltExceptionInterface{}

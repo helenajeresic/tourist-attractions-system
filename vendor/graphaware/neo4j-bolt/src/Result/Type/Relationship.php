@@ -11,7 +11,7 @@
 
 namespace GraphAware\Bolt\Result\Type;
 
-use GraphAware\Common\Type\Relationship as RelationshipInterface;
+use GraphAware\Common\Type\RelationshipInterface;
 
 class Relationship extends MapAccess implements RelationshipInterface
 {
@@ -36,11 +36,12 @@ class Relationship extends MapAccess implements RelationshipInterface
     protected $type;
 
     /**
-     * @param int    $identity
-     * @param int    $startNodeIdentity
-     * @param int    $endNodeIdentity
+     * Relationship constructor.
+     * @param int $identity
+     * @param int $startNodeIdentity
+     * @param int $endNodeIdentity
      * @param string $type
-     * @param array  $properties
+     * @param array $properties
      */
     public function __construct($identity, $startNodeIdentity, $endNodeIdentity, $type, array $properties = array())
     {
@@ -52,7 +53,7 @@ class Relationship extends MapAccess implements RelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return int
      */
     public function identity()
     {
@@ -76,7 +77,7 @@ class Relationship extends MapAccess implements RelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return string
      */
     public function type()
     {
@@ -84,7 +85,9 @@ class Relationship extends MapAccess implements RelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $type
+     *
+     * @return bool
      */
     public function hasType($type)
     {

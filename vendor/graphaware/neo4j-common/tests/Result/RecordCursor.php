@@ -3,7 +3,6 @@
 namespace GraphAware\Common\Tests\Result;
 
 use GraphAware\Common\Result\AbstractRecordCursor;
-use GraphAware\Common\Result\Record;
 
 class RecordCursor extends AbstractRecordCursor
 {
@@ -25,11 +24,6 @@ class RecordCursor extends AbstractRecordCursor
     public function firstRecord()
     {
         // TODO: Implement firstRecord() method.
-    }
-
-    public function firstRecordOrDefault($default)
-    {
-        // TODO: Implement firstRecordOrDefault() method.
     }
 
 

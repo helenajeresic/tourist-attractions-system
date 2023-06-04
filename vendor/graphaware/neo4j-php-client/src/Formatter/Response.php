@@ -8,28 +8,19 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace GraphAware\Neo4j\Client\Formatter;
 
 class Response
 {
-    /**
-     * @var array
-     */
     private $rawResponse;
 
-    /**
-     * @var Result[]
-     */
     private $results;
 
-    /**
-     * @var array
-     */
+    private $rows;
+
     private $errors = [];
 
-    /**
-     * @param array $rawResponse
-     */
     public function setRawResponse($rawResponse)
     {
         $this->rawResponse = $rawResponse;
@@ -41,25 +32,18 @@ class Response
         }
     }
 
-    /**
-     * @return string
-     */
     public function getJsonResponse()
     {
-        return json_encode($this->rawResponse);
+        $json = json_encode($this->rawResponse);
+
+        return $json;
     }
 
-    /**
-     * @return array
-     */
     public function getResponse()
     {
         return $this->rawResponse;
     }
 
-    /**
-     * @param Result $result
-     */
     public function addResult(Result $result)
     {
         $this->results[] = $result;
@@ -87,17 +71,11 @@ class Response
         return $this->results;
     }
 
-    /**
-     * @param Result $result
-     */
     public function setResult(Result $result)
     {
         $this->results = $result;
     }
 
-    /**
-     * @return array
-     */
     public function getErrors()
     {
         return $this->errors;
@@ -116,7 +94,11 @@ class Response
      */
     public function containsResults()
     {
-        return isset($this->rawResponse['results']) && !empty($this->rawResponse['results']);
+        if (isset($this->rawResponse['results']) && !empty($this->rawResponse['results'])) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -124,12 +106,31 @@ class Response
      */
     public function containsRows()
     {
-        return isset($this->rawResponse['results'][0]['columns']) && !empty($this->rawResponse['results']['0']['columns']);
+        if (isset($this->rawResponse['results'][0]['columns']) && !empty($this->rawResponse['results']['0']['columns'])) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function setRows(array $rows)
+    {
+        $this->rows = $rows;
+    }
+
+    public function geRows()
+    {
+        return $this->rows;
     }
 
     /**
-     * @return array
+     * @return bool
      */
+    public function hasRows()
+    {
+        return null !== $this->rows;
+    }
+
     public function getBody()
     {
         return $this->rawResponse;

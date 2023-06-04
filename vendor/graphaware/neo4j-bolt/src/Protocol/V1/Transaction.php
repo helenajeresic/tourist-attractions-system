@@ -11,151 +11,67 @@
 
 namespace GraphAware\Bolt\Protocol\V1;
 
-use GraphAware\Bolt\Exception\MessageFailureException;
 use GraphAware\Common\Cypher\Statement;
 use GraphAware\Common\Transaction\TransactionInterface;
 
 class Transaction implements TransactionInterface
 {
-    private static $NO_ROLLBACK_STATUS_CODE = 'ClientNotification';
-
     const OPENED = 'OPEN';
 
     const COMMITED = 'COMMITED';
 
-    const ROLLED_BACK = 'TRANSACTION_ROLLED_BACK';
+    const ROLLED_BACK = 'ROLLED_BACK';
 
-    /**
-     * @var string|null
-     */
     protected $state;
 
-    /**
-     * @var Session
-     */
     protected $session;
 
-    /**
-     * @var bool
-     */
     protected $closed = false;
 
-    /**
-     * @param Session $session
-     */
     public function __construct(Session $session)
     {
         $this->session = $session;
         $this->session->transaction = $this;
+        //$this->begin();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isOpen()
     {
         return $this->state === self::OPENED;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isCommited()
     {
         return $this->state === self::COMMITED;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isRolledBack()
     {
         return $this->state === self::ROLLED_BACK;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function rollback()
-    {
-        $this->assertNotClosed();
-        $this->assertStarted();
-        $this->session->run('ROLLBACK');
-        $this->closed = true;
-        $this->state = self::ROLLED_BACK;
-        $this->session->transaction = null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function status()
-    {
-        return $this->getStatus();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function commit()
-    {
-        $this->success();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function push($query, array $parameters = array(), $tag = null)
-    {
-        //
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function begin()
-    {
-        $this->assertNotStarted();
-        $this->session->run('BEGIN');
-        $this->state = self::OPENED;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function run(Statement $statement)
-    {
-        try {
-            return $this->session->run($statement->text(), $statement->parameters(), $statement->getTag());
-        } catch (MessageFailureException $e) {
-            $spl = explode('.', $e->getStatusCode());
-            if (self::$NO_ROLLBACK_STATUS_CODE !== $spl[1]) {
-                $this->state = self::ROLLED_BACK;
-                $this->closed = true;
-            }
-            throw $e;
-        }
-    }
-
-    /**
-     * @return string
-     */
     public function getStatus()
     {
         return $this->state;
     }
 
-    /**
-     * @param Statement[] $statements
-     *
-     * @return \GraphAware\Common\Result\ResultCollection
-     */
+    public function begin()
+    {
+        $this->assertNotStarted();
+        $this->session->run("BEGIN");
+        $this->state = self::OPENED;
+    }
+
+    public function run(Statement $statement)
+    {
+        return $this->session->run($statement->text(), $statement->parameters(), $statement->getTag());
+    }
+
     public function runMultiple(array $statements)
     {
         $pipeline = $this->session->createPipeline();
-
         foreach ($statements as $statement) {
-            $pipeline->push($statement->text(), $statement->parameters(), $statement->getTag());
+            $pipeline->push($statement->text(), $statement->parameters());
         }
 
         return $pipeline->run();
@@ -165,18 +81,20 @@ class Transaction implements TransactionInterface
     {
         $this->assertNotClosed();
         $this->assertStarted();
-        $this->session->run('COMMIT');
+        $this->session->run("COMMIT");
         $this->state = self::COMMITED;
         $this->closed = true;
         $this->session->transaction = null;
     }
 
-    /**
-     * @return Session
-     */
-    public function getSession()
+    public function rollback()
     {
-        return $this->session;
+        $this->assertNotClosed();
+        $this->assertStarted();
+        $result = $this->session->run("ROLLBACK");
+        $this->closed = true;
+        $this->state = self::ROLLED_BACK;
+        $this->session->transaction = null;
     }
 
     private function assertStarted()
@@ -199,4 +117,25 @@ class Transaction implements TransactionInterface
             throw new \RuntimeException('This Transaction is closed');
         }
     }
+
+    public function status()
+    {
+
+    }
+
+    public function commit()
+    {
+        $this->success();
+    }
+
+    public function push($query, array $parameters = array(), $tag = null)
+    {
+        //
+    }
+
+    public function getSession()
+    {
+        return $this->session;
+    }
+
 }

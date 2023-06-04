@@ -8,9 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace GraphAware\Neo4j\Client\Formatter\Type;
 
-use GraphAware\Common\Type\Relationship as RelationshipInterface;
+use GraphAware\Common\Type\RelationshipInterface;
 
 class Relationship extends MapAccess implements RelationshipInterface
 {
@@ -35,13 +36,19 @@ class Relationship extends MapAccess implements RelationshipInterface
     protected $endNodeIdentity;
 
     /**
-     * @param int    $id
-     * @param string $type
-     * @param int    $startNodeId
-     * @param int    $endNodeId
-     * @param array  $properties
+     * @var array
      */
-    public function __construct($id, $type, $startNodeId, $endNodeId, array $properties = [])
+    protected $properties;
+
+    /**
+     * Relationship constructor.
+     * @param $id
+     * @param $type
+     * @param $startNodeId
+     * @param $endNodeId
+     * @param array $properties
+     */
+    public function __construct($id, $type, $startNodeId, $endNodeId, array $properties)
     {
         $this->id = $id;
         $this->type = $type;
@@ -51,7 +58,7 @@ class Relationship extends MapAccess implements RelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return mixed
      */
     public function identity()
     {
@@ -59,7 +66,7 @@ class Relationship extends MapAccess implements RelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return mixed
      */
     public function type()
     {
@@ -67,7 +74,8 @@ class Relationship extends MapAccess implements RelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $type
+     * @return bool
      */
     public function hasType($type)
     {
@@ -75,7 +83,7 @@ class Relationship extends MapAccess implements RelationshipInterface
     }
 
     /**
-     * @return int
+     * @return mixed
      */
     public function startNodeIdentity()
     {
@@ -83,7 +91,7 @@ class Relationship extends MapAccess implements RelationshipInterface
     }
 
     /**
-     * @return int
+     * @return mixed
      */
     public function endNodeIdentity()
     {

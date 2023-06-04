@@ -16,9 +16,6 @@ use GraphAware\Bolt\Misc\Helper;
 use GraphAware\Bolt\PackStream\Structure\Structure;
 use GraphAware\Bolt\Protocol\Constants;
 use GraphAware\Bolt\Protocol\Message\RawMessage;
-use GraphAware\Bolt\Result\Type\Node;
-use GraphAware\Bolt\Result\Type\Path;
-use GraphAware\Bolt\Result\Type\Relationship;
 
 class Unpacker
 {
@@ -30,19 +27,10 @@ class Unpacker
 
     const IGNORED = 'IGNORED';
 
-    /**
-     * @var bool
-     */
     protected $is64bits;
 
-    /**
-     * @var StreamChannel
-     */
     protected $streamChannel;
 
-    /**
-     * @param StreamChannel $streamChannel
-     */
     public function __construct(StreamChannel $streamChannel)
     {
         $this->is64bits = PHP_INT_SIZE == 8;
@@ -51,7 +39,6 @@ class Unpacker
 
     /**
      * @param \GraphAware\Bolt\Protocol\Message\RawMessage $message
-     *
      * @return \GraphAware\Bolt\PackStream\Structure\Structure
      */
     public function unpackRaw(RawMessage $message)
@@ -61,9 +48,6 @@ class Unpacker
         return $this->unpackElement($walker);
     }
 
-    /**
-     * @return Structure
-     */
     public function unpack()
     {
         $b = '';
@@ -76,9 +60,10 @@ class Unpacker
         return $this->unpackElement(new BytesWalker(new RawMessage($b)));
     }
 
+
+
     /**
      * @param \GraphAware\Bolt\PackStream\BytesWalker $walker
-     *
      * @return \GraphAware\Bolt\PackStream\Structure\Structure
      */
     public function unpackElement(BytesWalker $walker)
@@ -111,7 +96,7 @@ class Unpacker
             for ($i = 0; $i < $size; ++$i) {
                 $identifier = $this->unpackElement($walker);
                 $value = $this->unpackElement($walker);
-                $map[$identifier] = $value;
+                $map[$identifier] =  $value;
             }
 
             return $map;
@@ -179,7 +164,6 @@ class Unpacker
 
         if ($markerHigh === Constants::LIST_TINY) {
             $size = $this->getLowNibbleValue($marker);
-
             return $this->unpackList($size, $walker);
         }
 
@@ -191,13 +175,6 @@ class Unpacker
 
         if ($byte === Constants::LIST_16) {
             $size = $this->readUnsignedShort($walker);
-
-            return $this->unpackList($size, $walker);
-        }
-
-        if ($byte === Constants::LIST_32) {
-            $size = $this->readUnsignedLong($walker);
-
             return $this->unpackList($size, $walker);
         }
 
@@ -211,6 +188,7 @@ class Unpacker
 
         // Checks for floats
         if ($byte === Constants::MARKER_FLOAT) {
+
             list(, $v) = unpack('d', strrev($walker->read(8)));
 
             return (float) $v;
@@ -218,7 +196,7 @@ class Unpacker
 
         // Checks Primitive Values NULL, TRUE, FALSE
         if ($byte === Constants::MARKER_NULL) {
-            return;
+            return null;
         }
 
         if ($byte === Constants::MARKER_TRUE) {
@@ -232,11 +210,6 @@ class Unpacker
         throw new SerializationException(sprintf('Unable to find serialization type for marker %s', Helper::prettyHex($marker)));
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return Node
-     */
     public function unpackNode(BytesWalker $walker)
     {
         $identity = $this->unpackElement($walker);
@@ -246,11 +219,6 @@ class Unpacker
         return new Node($identity, $labels, $properties);
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return Relationship
-     */
     public function unpackRelationship(BytesWalker $walker)
     {
         $identity = $this->unpackElement($walker);
@@ -262,61 +230,35 @@ class Unpacker
         return new Relationship($identity, $startNode, $endNode, $type, $properties);
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return Path
-     */
     public function unpackPath(BytesWalker $walker)
     {
         return $this->unpackElement($walker);
     }
 
-    /**
-     * @param int         $size
-     * @param BytesWalker $walker
-     *
-     * @return string
-     */
     public function unpackText($size, BytesWalker $walker)
     {
-        return $walker->read($size);
+        $textString = $walker->read($size);
+
+        return $textString;
     }
 
-    /**
-     * @param string $value
-     *
-     * @return int
-     */
     public function unpackInteger($value)
     {
         return (int) $value;
     }
 
-    /**
-     * @param int         $size
-     * @param BytesWalker $walker
-     *
-     * @return array
-     */
     public function unpackMap($size, BytesWalker $walker)
     {
         $map = [];
         for ($i = 0; $i < $size; ++$i) {
             $identifier = $this->unpackElement($walker);
             $value = $this->unpackElement($walker);
-            $map[$identifier] = $value;
+            $map[$identifier] =  $value;
         }
 
         return $map;
     }
 
-    /**
-     * @param int         $size
-     * @param BytesWalker $walker
-     *
-     * @return array
-     */
     public function unpackList($size, BytesWalker $walker)
     {
         $size = (int) $size;
@@ -328,26 +270,15 @@ class Unpacker
         return $list;
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return int
-     */
     public function getStructureSize(BytesWalker $walker)
     {
         $marker = $walker->read(1);
-
         // if tiny size, no more bytes to read, the size is encoded in the low nibble
         if ($this->isMarkerHigh($marker, Constants::STRUCTURE_TINY)) {
             return $this->getLowNibbleValue($marker);
         }
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return string
-     */
     public function getSignature(BytesWalker $walker)
     {
         static $signatures = [
@@ -358,7 +289,7 @@ class Unpacker
             Constants::SIGNATURE_UNBOUND_RELATIONSHIP => 'UNBOUND_RELATIONSHIP',
             Constants::SIGNATURE_NODE => 'NODE',
             Constants::SIGNATURE_PATH => 'PATH',
-            Constants::SIGNATURE_RELATIONSHIP => 'RELATIONSHIP',
+            Constants::SIGNATURE_RELATIONSHIP => 'RELATIONSHIP'
         ];
 
         $sigMarker = $walker->read(1);
@@ -366,46 +297,41 @@ class Unpacker
 
         return $signatures[$ordMarker];
 
-//        if (Constants::SIGNATURE_SUCCESS === $ordMarker) {
-//            return self::SUCCESS;
-//        }
-//
-//        if ($this->isSignature(Constants::SIGNATURE_FAILURE, $sigMarker)) {
-//            return self::FAILURE;
-//        }
-//
-//        if ($this->isSignature(Constants::SIGNATURE_RECORD, $sigMarker)) {
-//            return self::RECORD;
-//        }
-//
-//        if ($this->isSignature(Constants::SIGNATURE_IGNORE, $sigMarker)) {
-//            return self::IGNORED;
-//        }
-//
-//        if ($this->isSignature(Constants::SIGNATURE_UNBOUND_RELATIONSHIP, $sigMarker)) {
-//            return "UNBOUND_RELATIONSHIP";
-//        }
-//
-//        if ($this->isSignature(Constants::SIGNATURE_NODE, $sigMarker)) {
-//            return "NODE";
-//        }
-//
-//        if ($this->isSignature(Constants::SIGNATURE_PATH, $sigMarker)) {
-//            return "PATH";
-//        }
-//
-//        if ($this->isSignature(Constants::SIGNATURE_RELATIONSHIP, $sigMarker)) {
-//            return "RELATIONSHIP";
-//        }
-//
-//        throw new SerializationException(sprintf('Unable to guess the signature for byte "%s"', Helper::prettyHex($sigMarker)));
+        if (Constants::SIGNATURE_SUCCESS === $ordMarker) {
+            return self::SUCCESS;
+        }
+
+        if ($this->isSignature(Constants::SIGNATURE_FAILURE, $sigMarker)) {
+            return self::FAILURE;
+        }
+
+        if ($this->isSignature(Constants::SIGNATURE_RECORD, $sigMarker)) {
+            return self::RECORD;
+        }
+
+        if ($this->isSignature(Constants::SIGNATURE_IGNORE, $sigMarker)) {
+            return self::IGNORED;
+        }
+
+        if ($this->isSignature(Constants::SIGNATURE_UNBOUND_RELATIONSHIP, $sigMarker)) {
+            return "UNBOUND_RELATIONSHIP";
+        }
+
+        if ($this->isSignature(Constants::SIGNATURE_NODE, $sigMarker)) {
+            return "NODE";
+        }
+
+        if ($this->isSignature(Constants::SIGNATURE_PATH, $sigMarker)) {
+            return "PATH";
+        }
+
+        if ($this->isSignature(Constants::SIGNATURE_RELATIONSHIP, $sigMarker)) {
+            return "RELATIONSHIP";
+        }
+
+        throw new SerializationException(sprintf('Unable to guess the signature for byte "%s"', Helper::prettyHex($sigMarker)));
     }
 
-    /**
-     * @param string $byte
-     *
-     * @return int
-     */
     public function getLowNibbleValue($byte)
     {
         $marker = ord($byte);
@@ -413,49 +339,30 @@ class Unpacker
         return $marker & 0x0f;
     }
 
-    /**
-     * @param $byte
-     * @param $nibble
-     *
-     * @return bool
-     */
     public function isMarker($byte, $nibble)
     {
+
         $marker_raw = hexdec(bin2hex($byte));
 
         return $marker_raw === $nibble;
     }
 
-    /**
-     * @param $byte
-     * @param $nibble
-     *
-     * @return bool
-     */
     public function isMarkerHigh($byte, $nibble)
     {
+
         $marker_raw = ord($byte);
         $marker = $marker_raw & 0xF0;
 
         return $marker === $nibble;
     }
 
-    /**
-     * @param $sig
-     * @param $byte
-     *
-     * @return bool
-     */
     public function isSignature($sig, $byte)
     {
-        return $sig === ord($byte);
+        $raw = ord($byte);
+
+        return $sig === $raw;
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return mixed
-     */
     public function readUnsignedShortShort(BytesWalker $walker)
     {
         list(, $v) = unpack('C', $walker->read(1));
@@ -463,11 +370,6 @@ class Unpacker
         return $v;
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return mixed
-     */
     public function readSignedShortShort(BytesWalker $walker)
     {
         list(, $v) = unpack('c', $walker->read(1));
@@ -475,11 +377,6 @@ class Unpacker
         return $v;
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return mixed
-     */
     public function readUnsignedShort(BytesWalker $walker)
     {
         list(, $v) = unpack('n', $walker->read(2));
@@ -487,11 +384,6 @@ class Unpacker
         return $v;
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return mixed
-     */
     public function readSignedShort(BytesWalker $walker)
     {
         list(, $v) = unpack('s', $this->correctEndianness($walker->read(2)));
@@ -499,11 +391,6 @@ class Unpacker
         return $v;
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return mixed
-     */
     public function readUnsignedLong(BytesWalker $walker)
     {
         list(, $v) = unpack('N', $walker->read(4));
@@ -511,11 +398,6 @@ class Unpacker
         return sprintf('%u', $v);
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return mixed
-     */
     public function readSignedLong(BytesWalker $walker)
     {
         list(, $v) = unpack('l', $this->correctEndianness($walker->read(4)));
@@ -523,11 +405,6 @@ class Unpacker
         return $v;
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return mixed
-     */
     public function readUnsignedLongLong(BytesWalker $walker)
     {
         list(, $v) = unpack('J', $walker->read(8));
@@ -535,11 +412,6 @@ class Unpacker
         return $v;
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return int
-     */
     public function readSignedLongLong(BytesWalker $walker)
     {
         list(, $high, $low) = unpack('N2', $walker->read(8));
@@ -547,13 +419,6 @@ class Unpacker
         return (int) bcadd($high << 32, $low, 0);
     }
 
-    /**
-     * @param int    $start
-     * @param int    $end
-     * @param string $byte
-     *
-     * @return mixed
-     */
     public function isInRange($start, $end, $byte)
     {
         $range = range($start, $end);
@@ -561,17 +426,11 @@ class Unpacker
         return in_array(ord($byte), $range);
     }
 
-    /**
-     * @param BytesWalker $walker
-     *
-     * @return string
-     */
     public function read_longlong(BytesWalker $walker)
     {
         $this->bitcount = $this->bits = 0;
         list(, $hi, $lo) = unpack('N2', $walker->read(8));
         $msb = self::getLongMSB($hi);
-
         if (!$this->is64bits) {
             if ($msb) {
                 $hi = sprintf('%u', $hi);
@@ -580,15 +439,9 @@ class Unpacker
                 $lo = sprintf('%u', $lo);
             }
         }
-
         return bcadd($this->is64bits && !$msb ? $hi << 32 : bcmul($hi, '4294967296', 0), $lo, 0);
     }
 
-    /**
-     * @param string $byteString
-     *
-     * @return string
-     */
     private function correctEndianness($byteString)
     {
         $tmp = unpack('S', "\x01\x00");
@@ -597,11 +450,6 @@ class Unpacker
         return $isLittleEndian ? strrev($byteString) : $byteString;
     }
 
-    /**
-     * @param int $longInt
-     *
-     * @return bool
-     */
     private static function getLongMSB($longInt)
     {
         return (bool) ($longInt & 0x80000000);

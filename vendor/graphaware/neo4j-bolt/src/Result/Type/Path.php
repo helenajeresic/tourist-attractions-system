@@ -11,31 +11,32 @@
 
 namespace GraphAware\Bolt\Result\Type;
 
-use GraphAware\Common\Type\Node as NodeInterface;
-use GraphAware\Common\Type\Path as BasePathInterface;
-use GraphAware\Common\Type\Relationship as RelationshipInterface;
+use GraphAware\Common\Type\NodeInterface;
+use GraphAware\Common\Type\PathInterface;
+use GraphAware\Common\Type\RelationshipInterface;
 
-class Path implements BasePathInterface
+class Path implements PathInterface
 {
     /**
-     * @var NodeInterface[]
+     * @var array|\GraphAware\Bolt\Result\Type\Node[]
      */
     protected $nodes;
 
     /**
-     * @var UnboundRelationship[]
+     * @var array|\GraphAware\Bolt\Result\Type\UnboundRelationship[]
      */
     protected $relationships;
 
     /**
-     * @var \int[]
+     * @var array|\int[]
      */
     protected $sequence;
 
     /**
-     * @param NodeInterface[]       $nodes
-     * @param UnboundRelationship[] $relationships
-     * @param int[]                 $sequence
+     * Path constructor.
+     * @param \GraphAware\Bolt\Result\Type\Node[] $nodes
+     * @param \GraphAware\Bolt\Result\Type\UnboundRelationship[] $relationships
+     * @param int[] $sequence
      */
     public function __construct(array $nodes, array $relationships, array $sequence)
     {
@@ -45,58 +46,63 @@ class Path implements BasePathInterface
     }
 
     /**
-     * @return NodeInterface
+     * @return \GraphAware\Bolt\Result\Type\Node
      */
-    public function start()
+    function start()
     {
         return $this->nodes[0];
     }
 
     /**
-     * @return Node
+     * @return \GraphAware\Bolt\Result\Type\Node
      */
-    public function end()
+    function end()
     {
-        return $this->nodes[count($this->nodes) - 1];
+        return $this->nodes[count($this->nodes)-1];
     }
 
     /**
-     * {@inheritdoc}
+     * @return int
      */
-    public function length()
+    function length()
     {
         return count($this->relationships);
     }
 
     /**
-     * {@inheritdoc}
+     * @param \GraphAware\Common\Type\NodeInterface $node
+     *
+     * @return bool
      */
-    public function containsNode(NodeInterface $node)
+    function containsNode(NodeInterface $node)
     {
         return in_array($node, $this->nodes);
     }
 
     /**
-     * {@inheritdoc}
+     * @param \GraphAware\Common\Type\RelationshipInterface $relationship
+     *
+     * @return bool
      */
-    public function containsRelationship(RelationshipInterface $relationship)
+    function containsRelationship(RelationshipInterface $relationship)
     {
         return in_array($relationship, $this->relationships);
     }
 
     /**
-     * @return Node[]
+     * @return array|\GraphAware\Bolt\Result\Type\Node[]
      */
-    public function nodes()
+    function nodes()
     {
         return $this->nodes;
     }
 
     /**
-     * @return UnboundRelationship[]
+     * @return array|\GraphAware\Bolt\Result\Type\UnboundRelationship[]
      */
-    public function relationships()
+    function relationships()
     {
         return $this->relationships;
     }
+
 }

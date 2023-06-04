@@ -4,8 +4,8 @@
 
 [![Build Status](https://travis-ci.org/graphaware/neo4j-php-client.svg?branch=master)](https://travis-ci.org/graphaware/neo4j-php-client)
 [![Latest Stable Version](https://poser.pugx.org/graphaware/neo4j-php-client/v/stable.svg)](https://packagist.org/packages/graphaware/neo4j-php-client)
-[![Total Downloads](https://poser.pugx.org/graphaware/neo4j-php-client/downloads.svg)](https://packagist.org/packages/graphaware/neo4j-php-client)
-[![License](https://poser.pugx.org/graphaware/neo4j-php-client/license.svg)](https://packagist.org/packages/graphaware/neo4j-php-client)
+[![Total Downloads](https://poser.pugx.org/neoxygen/neoclient/downloads.svg)](https://packagist.org/packages/neoxygen/neoclient)
+[![License](https://poser.pugx.org/neoxygen/neoclient/license.svg)](https://packagist.org/packages/graphaware/neo4j-php-client)
 
 ## Introduction
 
@@ -29,7 +29,6 @@ Neo4j is a transactional, open-source graph database. A graph database manages d
 | >= 2.2.6    |   Yes       |
 | 2.2         |   Yes       |
 | 2.3         |   Yes       |
-| 3.0 +       |   Yes       |
 
 #### Neo4j Feature Support
 
@@ -45,8 +44,6 @@ Neo4j is a transactional, open-source graph database. A graph database manages d
 ### Requirements
 
 * PHP >= 5.6
-* ext-bcmath
-* ext-mbstring
 * A Neo4j database (minimum version 2.2.6)
 
 ### Getting Help
@@ -55,11 +52,7 @@ You can:
 
  * [Ask a question on StackOverflow](http://stackoverflow.com/questions/ask?tags=graphaware,php,neo4j)
  * For bugs, please feel free to create a [new issue on GitHub](https://github.com/graphaware/neo4j-php-client/issues/new)
-
-### Implementations
-
-* [Symfony Framework Bundle](https://github.com/PandawanTechnology/Neo4jBundle)
-
+ 
 ## Installation and basic usage
 
 ### Installation
@@ -67,7 +60,7 @@ You can:
 Add the library to your composer dependencies :
 
 ```bash
-composer require graphaware/neo4j-php-client:^4.0
+composer require graphaware/neo4j-php-client:^4.0@alpha
 ```
 
 Require the composer autoloader, configure your connection by providing a connection alias and your connection settings :
@@ -124,7 +117,7 @@ $query = "MATCH (n:Person)-[:FOLLOWS]->(friend) RETURN n.name, collect(friend) a
 $result = $client->run($query);
 
 foreach ($result->getRecords() as $record) {
-    echo sprintf('Person name is : %s and has %d number of friends', $record->value('name'), count($record->value('friends')));
+    echo sprintf('Person name is : %s and has %d number of friends', $record->value('name'), count($record->value('friends'));
 }
 ```
 
@@ -239,109 +232,6 @@ The client takes care of the hydration of Graph objects to PHP Objects, so it is
 * `startNodeIdentity` : returns the start node id
 * `endNodeIdentity` : returns the end node id
 
-##### Path
-
-* `start()` : returns the start node of the path
-* `end()` : returns the end node of the path
-* `length()` : returns the length of the path
-* `nodes()` : returns all the nodes in the path
-* `relationships` : returns all the relationships in the path
-
-#### Handling Results (from v3 to v4)
-
-
-There are 3 main concepts around this topic :
-
-1. a Result
-2. a Record
-3. a RecordValue
-
-Let's take a look at a query we do in the browser containing multiple possibilities of types :
-
-```
-MATCH (n:Address)
-RETURN n.address as addr, n, collect(id(n)) as ids
-LIMIT 5
-```
-
-![screen shot 2016-05-11 at 20 54 34bis](https://cloud.githubusercontent.com/assets/1222009/15192806/1a39cb30-17bb-11e6-8687-ed861411af2d.png)
-
-
-##### Result
-
-A `Result` is a collection of `Record` objects, every **row** you see in the browser is a `Record` and contains `Record Value`s.
-
-* In blue the Result
-* In orange a Record
-* In green a RecordValue
-
-##### Record
-
-In contrary to the previous versions of the client, there is no more automatic merging of all the records into one big record, so you will need to iterate all the records from the `Result` :
-
-```php
-$query = "MATCH (n:Address)
-RETURN n.address as addr, n, collect(id(n)) as ids
-LIMIT 5";
-$result = $client->run($query);
-
-foreach ($result->records() as $record) {
-  // here we do what we want with one record (one row in the browser result)
-  print_r($record);
-}
-```
-
-##### Record Value
-
-Every record contains a collection of `Record Value`s, which are identified by a `key`, the key is the identifier you give in the `RETURN` clause of the Cypher query. In our example, a `Record` will contain the following keys :
-
-* addr
-* n
-* ids
-
-In order to access the value, you make use of the `get()` method on the `Record` object :
-
-```php
-$address = $record->get('addr');
-```
-
-The type of the value is depending of what you return from Neo4j, in our case the following values will be returned :
-
-* a `string` for the `addr` value
-* a `Node` for the `n` value
-* an `array` of `integers` for the `ids` value
-
-Meaning that :
-
-```php
-$record->get('addr'); // returns a string
-$record->get('n'); // returns a Node object
-$record->get('ids'); // returns an array
-```
-
-`Node`, `Relationship` and `Path` objects have then further methods, so if you know that the node returned by the identifier `n` has a `countries` property on it, you can access it like this :
-
-```php
-$addressNode = $record->get('n');
-$countries = $addressNode->value('countries');
-```
-
-The `Record` object contains three methods for IDE friendlyness, namely :
-
-```php
-$record->nodeValue('n');
-$record->relationshipValue('r');
-$record->pathValue('p');
-```
-
-This does not offer something extra, just that the docblocks hint the IDE for autocompletion.
-
-
-##### Extra: ResultCollection
-
-When you use `Stack` objects for sending multiple statements at once, it will return you a `ResultCollection` object containing a collection of `Result`s. So you need to iterate the results before accessing the records.
-
-
 ### Working with Transactions
 
 The Client provides a Transaction object that ease how you would work with transactions.
@@ -438,14 +328,6 @@ The client is also aware of the manually configured master connection, so sendin
 $client->runWrite('CREATE (n:User {login: 123})');
 ```
 
-### Helper Methods
-
-```
-$client->getLabels();
-```
-
-Returns an array of `Label` objects.
-
 ### Event Dispatching
 
 3 types of events are dispatched during the `run` methods :
@@ -481,20 +363,6 @@ $client = ClientBuilder::create()
 ```
 
 The timeout by default is 5 seconds.
-
-### TLS
-
-You can enable TLS encryption for the Bolt Protocol by passing a `Configuration` instance when building the connection, here
-is a simple example :
-
-```
-$config = \GraphAware\Bolt\Configuration::newInstance()
-    ->withCredentials('bolttest', 'L7n7SfTSj')
-    ->withTLSMode(\GraphAware\Bolt\Configuration::TLSMODE_REQUIRED);
-
-$driver = \GraphAware\Bolt\GraphDatabase::driver('bolt://hodccomjfkgdenl.dbs.gdb.com:24786', $config);
-$session = $driver->session();
-```
 
 ### License
 

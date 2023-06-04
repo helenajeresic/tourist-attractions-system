@@ -2,7 +2,7 @@
 
 namespace GraphAware\Bolt\Tests\Integration\Packing;
 
-use GraphAware\Bolt\Tests\IntegrationTestCase;
+use GraphAware\Bolt\Tests\Integration\IntegrationTestCase;
 
 /**
  * @group packing
@@ -11,7 +11,7 @@ use GraphAware\Bolt\Tests\IntegrationTestCase;
  */
 class PackingFloatsIntegrationTest extends IntegrationTestCase
 {
-    protected function setUp()
+    public function setUp()
     {
         parent::setUp();
         $this->emptyDB();
@@ -19,7 +19,8 @@ class PackingFloatsIntegrationTest extends IntegrationTestCase
 
     public function testPackingFloatsPositive()
     {
-        $session = $this->getSession();
+        $driver = $this->getDriver();
+        $session = $driver->session();
 
         for ($x = 1; $x < 1000; ++$x) {
             $result = $session->run("CREATE (n:Float) SET n.prop = {x} RETURN n.prop as x", ['x' => $x/100]);
@@ -29,7 +30,8 @@ class PackingFloatsIntegrationTest extends IntegrationTestCase
 
     public function testPackingFloatsNegative()
     {
-        $session = $this->getSession();
+        $driver = $this->getDriver();
+        $session = $driver->session();
 
         for ($x = -1; $x > -1000; --$x) {
             $result = $session->run("CREATE (n:Float) SET n.prop = {x} RETURN n.prop as x", ['x' => $x/100]);
@@ -39,7 +41,10 @@ class PackingFloatsIntegrationTest extends IntegrationTestCase
 
     public function testPi()
     {
-        $result = $this->getSession()->run("CREATE (n:Float) SET n.prop = {x} RETURN n.prop as x", ['x' => pi()]);
+        $driver = $this->getDriver();
+        $session = $driver->session();
+
+        $result = $session->run("CREATE (n:Float) SET n.prop = {x} RETURN n.prop as x", ['x' => pi()]);
         $this->assertEquals(pi(), $result->getRecord()->value('x'));
     }
 }

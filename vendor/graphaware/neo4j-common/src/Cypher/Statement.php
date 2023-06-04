@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace GraphAware\Common\Cypher;
 
 class Statement implements StatementInterface
@@ -44,7 +43,6 @@ class Statement implements StatementInterface
         $this->text = (string) $text;
         $this->parameters = $parameters;
         $this->type = $statementType;
-
         if (null !== $tag) {
             $this->tag = (string) $tag;
         }
@@ -64,20 +62,6 @@ class Statement implements StatementInterface
             throw new \InvalidArgumentException(sprintf('Value %s is invalid as statement type, possible values are %s', $statementType, json_encode(StatementType::keys())));
         }
         $type = new StatementType($statementType);
-
-        return new self($text, $parameters, $tag, $type);
-    }
-
-    /**
-     * @param string      $text
-     * @param array       $parameters
-     * @param string|null $tag
-     *
-     * @return \GraphAware\Common\Cypher\Statement
-     */
-    public static function prepare($text, array $parameters = array(), $tag = null)
-    {
-        $type = new StatementType(StatementType::READ_WRITE);
 
         return new self($text, $parameters, $tag, $type);
     }
@@ -125,7 +109,7 @@ class Statement implements StatementInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return null|string
      */
     public function getTag()
     {
@@ -133,7 +117,7 @@ class Statement implements StatementInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return bool
      */
     public function hasTag()
     {
@@ -141,7 +125,7 @@ class Statement implements StatementInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return StatementType
      */
     public function statementType()
     {

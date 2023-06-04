@@ -31,9 +31,9 @@ class BytesWalker
     protected $encoding;
 
     /**
-     * @param RawMessage $message
-     * @param int        $position
-     * @param string     $encoding
+     * @param \GraphAware\Bolt\Protocol\Message\RawMessage $message
+     * @param int                                          $position
+     * @param string                                       $encoding
      */
     public function __construct(RawMessage $message, $position = 0, $encoding = 'ASCII')
     {
@@ -56,11 +56,6 @@ class BytesWalker
         return $raw;
     }
 
-    /**
-     * @param int $n
-     *
-     * @throws \OutOfBoundsException
-     */
     public function forward($n)
     {
         $n = (int) $n;
@@ -71,11 +66,6 @@ class BytesWalker
         $this->position += $n;
     }
 
-    /**
-     * @param int $n
-     *
-     * @throws \OutOfBoundsException
-     */
     public function setPosition($n)
     {
         $n = (int) $n;
@@ -88,8 +78,6 @@ class BytesWalker
 
     /**
      * @param int $n
-     *
-     * @throws \InvalidArgumentException
      */
     public function rewind($n)
     {
@@ -104,17 +92,11 @@ class BytesWalker
         $this->position -= $n;
     }
 
-    /**
-     * @return int
-     */
     public function getLength()
     {
         return mb_strlen($this->bytes, $this->encoding);
     }
 
-    /**
-     * @return int
-     */
     public function getPosition()
     {
         return $this->position;

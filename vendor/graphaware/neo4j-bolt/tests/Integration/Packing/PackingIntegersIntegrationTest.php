@@ -2,7 +2,7 @@
 
 namespace GraphAware\Bolt\Tests\Integration\Packing;
 
-use GraphAware\Bolt\Tests\IntegrationTestCase;
+use GraphAware\Bolt\Tests\Integration\IntegrationTestCase;
 
 /**
  * Class PackingIntegrationTest
@@ -14,11 +14,11 @@ use GraphAware\Bolt\Tests\IntegrationTestCase;
  */
 class PackingIntegrationTest extends IntegrationTestCase
 {
-    protected function setUp()
+    public function setUp()
     {
         parent::setUp();
         $this->emptyDB();
-        $this->getSession()->run("CREATE INDEX ON :Integer(value)");
+        $this->driver->session()->run("CREATE INDEX ON :Integer(value)");
     }
 
     /**
@@ -71,7 +71,7 @@ class PackingIntegrationTest extends IntegrationTestCase
 
     public function testMinIntegers32End()
     {
-        $min = (-1*abs(pow(2, 31)));
+        $min = (-1*abs(pow(2,31)));
         $this->doRangeTest($min, $min + 100);
     }
 
@@ -80,7 +80,7 @@ class PackingIntegrationTest extends IntegrationTestCase
      */
     public function testMinIntegers64()
     {
-        $max = (-1*abs(pow(2, 31)))-1;
+        $max = (-1*abs(pow(2,31)))-1;
         $this->doRangeTest($max - 100, $max);
     }
 
@@ -89,7 +89,7 @@ class PackingIntegrationTest extends IntegrationTestCase
      */
     public function testMin64IntegersEnd()
     {
-        $min = -1*abs(pow(2, 63));
+        $min = -1*abs(pow(2,63));
         $this->doRangeTest((int) $min, (int) $min+1);
     }
 
@@ -98,7 +98,7 @@ class PackingIntegrationTest extends IntegrationTestCase
      */
     public function test64Integers()
     {
-        $min = pow(2, 31);
+        $min = pow(2,31);
         $this->doRangeTest($min, $min+100);
     }
 
@@ -115,8 +115,7 @@ class PackingIntegrationTest extends IntegrationTestCase
     private function doRangeTest($min, $max)
     {
         $range = range($min, $max);
-        $session = $this->getSession();
-
+        $session = $this->driver->session();
         foreach ($range as $i) {
             $q = 'CREATE (n:Integer) SET n.value = {value}';
             $session->run($q, ['value' => $i]);

@@ -2,7 +2,7 @@
 
 namespace GraphAware\Bolt\Tests\Integration\Packing;
 
-use GraphAware\Bolt\Tests\IntegrationTestCase;
+use GraphAware\Bolt\Tests\Integration\IntegrationTestCase;
 
 /**
  * Class PackingTextIntegrationTest
@@ -14,12 +14,17 @@ use GraphAware\Bolt\Tests\IntegrationTestCase;
  */
 class PackingTextIntegrationTest extends IntegrationTestCase
 {
-    protected function setUp()
+    /**
+     * @var \GraphAware\Bolt\Protocol\SessionInterface
+     */
+    protected $session;
+
+    public function setUp()
     {
         parent::setUp();
         $this->emptyDB();
-
-        $this->getSession()->run("CREATE INDEX ON :Text(value)");
+        $this->session = $this->driver->session();
+        $this->session->run("CREATE INDEX ON :Text(value)");
     }
 
     /**
@@ -43,7 +48,7 @@ class PackingTextIntegrationTest extends IntegrationTestCase
      */
     public function testText16Packing()
     {
-        $this->doRangeTest(256, 356);
+        $this->doRangeTest(256,356);
         $this->doRangeTest(1024, 1026);
         $this->doRangeTest(2048, 2050);
         //$this->doRangeTest(16351, 16383);
@@ -64,20 +69,16 @@ class PackingTextIntegrationTest extends IntegrationTestCase
 
     public function doRangeTest($min, $max)
     {
-        $session = $this->getSession();
-
-        $q = 'CREATE (n:Text) SET n.value = {value}';
-
         foreach (range($min, $max) as $i) {
             $txt = str_repeat('a', $i);
-            $session->run($q, array('value' => $txt));
+            $q = 'CREATE (n:Text) SET n.value = {value}';
+            $this->session->run($q, array('value' => $txt));
         }
 
-        $q = 'MATCH (n:Text) WHERE n.value = {value} RETURN n.value as x';
-
         foreach (range($min, $max) as $i) {
             $txt = str_repeat('a', $i);
-            $response = $session->run($q, ['value' => $txt]);
+            $q = 'MATCH (n:Text) WHERE n.value = {value} RETURN n.value as x';
+            $response = $this->session->run($q, ['value' => $txt]);
             $this->assertCount(1, $response->getRecords());
             $this->assertEquals($txt, $response->getRecord()->value('x'));
         }

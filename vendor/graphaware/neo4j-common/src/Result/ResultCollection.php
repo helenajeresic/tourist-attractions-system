@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace GraphAware\Common\Result;
 
 class ResultCollection implements \Iterator
@@ -142,9 +141,7 @@ class ResultCollection implements \Iterator
         $combinedStats = new CombinedStatistics();
 
         foreach ($this->results as $result) {
-            if (null !== $result->summarize()->updateStatistics()) {
-                $combinedStats->mergeStats($result->summarize()->updateStatistics());
-            }
+            $combinedStats->mergeStats($result->summarize()->updateStatistics());
         }
 
         return $combinedStats;

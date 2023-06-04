@@ -16,39 +16,16 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Socket extends AbstractIO
 {
-    /**
-     * @var string
-     */
     private $host;
 
-    /**
-     * @var int
-     */
     private $port;
 
-    /**
-     * @var resource|null
-     */
     private $socket;
 
-    /**
-     * @var int
-     */
     private $timeout;
 
-    /**
-     * @var null|EventDispatcherInterface
-     */
     protected $dispatcher;
 
-    /**
-     * Socket constructor.
-     *
-     * @param string                        $host
-     * @param int                           $port
-     * @param int                           $timeout
-     * @param EventDispatcherInterface|null $dispatcher
-     */
     public function __construct($host, $port, $timeout = 5, EventDispatcherInterface $dispatcher = null)
     {
         $this->host = $host;
@@ -57,13 +34,9 @@ class Socket extends AbstractIO
         $this->dispatcher = $dispatcher;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function connect()
     {
         $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-
         if (!socket_connect($this->socket, $this->host, $this->port)) {
             $errno = socket_last_error($this->socket);
             $errstr = socket_strerror($errno);
@@ -85,9 +58,6 @@ class Socket extends AbstractIO
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function close()
     {
         if (is_resource($this->socket)) {
@@ -99,19 +69,17 @@ class Socket extends AbstractIO
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function reconnect()
     {
         $this->close();
-
-        return $this->connect();
+        $this->connect();
     }
 
-    /**
-     * {@inheritdoc}
-     */
+    public function getSocket()
+    {
+        return $this->socket;
+    }
+
     public function write($data)
     {
         $len = mb_strlen($data, 'ASCII');
@@ -127,6 +95,7 @@ class Socket extends AbstractIO
 
             $sent = socket_write($this->socket, $data, $len);
             if ($sent === false) {
+
                 throw new IOException(sprintf(
                     'Error sending data. Last SocketError: %s',
                     socket_strerror(socket_last_error())
@@ -146,24 +115,17 @@ class Socket extends AbstractIO
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function select($sec, $usec)
     {
         // not implemented yet
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function read($n)
     {
         $res = '';
         $read = 0;
 
         $buf = socket_read($this->socket, $n);
-
         while ($read < $n && $buf !== '' && $buf !== false) {
             $read += mb_strlen($buf, 'ASCII');
             $res .= $buf;
@@ -177,23 +139,18 @@ class Socket extends AbstractIO
                 $n
             ));
         }
-
         return $res;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function isConnected()
     {
         return is_resource($this->socket);
     }
 
-    /**
-     * @return null|resource
-     */
-    public function getSocket()
+    public function assertConnected()
     {
-        return $this->socket;
+        if (!$this->isConnected()) {
+            $this->connect();
+        }
     }
 }

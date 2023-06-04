@@ -64,12 +64,6 @@ class StatementUnitTest extends \PHPUnit_Framework_TestCase
         Statement::create($this->text(), $this->getParams(), null, "Invalid");
     }
 
-    public function testCanPrepareStatement()
-    {
-        $statement = Statement::prepare('text');
-        $this->assertInstanceOf(Statement::class, $statement);
-    }
-
     public function testImmutableStatementAPI()
     {
         $statement = Statement::create($this->text());

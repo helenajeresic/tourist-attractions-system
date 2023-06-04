@@ -19,13 +19,11 @@ use GraphAware\Bolt\Result\Type\Relationship;
 use GraphAware\Bolt\Result\Type\UnboundRelationship;
 use GraphAware\Common\Cypher\StatementInterface;
 use GraphAware\Common\Result\AbstractRecordCursor;
-use GraphAware\Common\Result\Record;
-use RuntimeException;
 
 class Result extends AbstractRecordCursor
 {
     /**
-     * @var RecordView[]
+     * @var \GraphAware\Common\Result\RecordViewInterface[]
      */
     protected $records = [];
 
@@ -35,17 +33,17 @@ class Result extends AbstractRecordCursor
     protected $fields;
 
     /**
-     * {@inheritdoc}
+     * Result constructor.
+     * @param \GraphAware\Common\Cypher\StatementInterface $statement
      */
     public function __construct(StatementInterface $statement)
     {
         $this->resultSummary = new ResultSummary($statement);
-
-        parent::__construct($statement);
+        return parent::__construct($statement);
     }
 
     /**
-     * @param Structure $structure
+     * @param \GraphAware\Bolt\PackStream\Structure\Structure $structure
      */
     public function pushRecord(Structure $structure)
     {
@@ -54,7 +52,7 @@ class Result extends AbstractRecordCursor
     }
 
     /**
-     * @return RecordView[]
+     * @return \GraphAware\Common\Result\RecordViewInterface[]
      */
     public function getRecords()
     {
@@ -62,14 +60,12 @@ class Result extends AbstractRecordCursor
     }
 
     /**
-     * @return RecordView
-     *
-     * @throws \RuntimeException When there is no record.
+     * @return \GraphAware\Bolt\Record\RecordView
      */
     public function getRecord()
     {
         if (count($this->records) < 1) {
-            throw new \RuntimeException('There is no record');
+            throw new \InvalidArgumentException('No records');
         }
 
         return $this->records[0];
@@ -100,7 +96,7 @@ class Result extends AbstractRecordCursor
     }
 
     /**
-     * @return ResultSummary
+     * @return \GraphAware\Bolt\Result\ResultSummary
      */
     public function summarize()
     {
@@ -120,8 +116,9 @@ class Result extends AbstractRecordCursor
     private function array_map_deep(array $array)
     {
         foreach ($array as $k => $v) {
+
             if ($v instanceof Structure && $v->getSignature() === 'NODE') {
-                $elts = $v->getElements();
+                $elts= $v->getElements();
                 $array[$k] = new Node($elts[0], $elts[1], $elts[2]);
             } elseif ($v instanceof Structure && $v->getSignature() === 'RELATIONSHIP') {
                 $elts = $v->getElements();
@@ -139,41 +136,21 @@ class Result extends AbstractRecordCursor
             }
         }
 
+
         return $array;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function size()
     {
         return count($this->records);
     }
 
-    /**
-     * @return RecordView
-     * @throws \RuntimeException When there is no record
-     */
     public function firstRecord()
     {
         if (!empty($this->records)) {
             return $this->records[0];
         }
 
-        throw new RuntimeException('There is no record');
+        return null;
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function firstRecordOrDefault($default)
-    {
-        if (0 === $this->size()) {
-            return $default;
-        }
-
-        return $this->firstRecord();
-    }
-
-
 }

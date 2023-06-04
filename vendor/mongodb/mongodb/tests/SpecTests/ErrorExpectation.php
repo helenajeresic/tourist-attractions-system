@@ -57,27 +57,6 @@ final class ErrorExpectation
     {
     }
 
-    public static function fromChangeStreams(stdClass $result)
-    {
-        $o = new self();
-
-        if (isset($result->error->code)) {
-            $o->code = $result->error->code;
-            $o->isExpected = true;
-        }
-
-        if (isset($result->error->errorLabels)) {
-            if (! self::isArrayOfStrings($result->error->errorLabels)) {
-                throw InvalidArgumentException::invalidType('errorLabels', $result->error->errorLabels, 'string[]');
-            }
-
-            $o->includedLabels = $result->error->errorLabels;
-            $o->isExpected = true;
-        }
-
-        return $o;
-    }
-
     public static function fromClientSideEncryption(stdClass $operation)
     {
         return self::fromGenericOperation($operation);
@@ -164,6 +143,8 @@ final class ErrorExpectation
             if ($actual !== null) {
                 $test->fail(sprintf("Operation threw unexpected %s: %s\n%s", get_class($actual), $actual->getMessage(), $actual->getTraceAsString()));
             }
+
+            $test->addToAssertionCount(1);
 
             return;
         }

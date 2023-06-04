@@ -8,31 +8,29 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace GraphAware\Neo4j\Client\Event;
 
-use GraphAware\Common\Cypher\StatementInterface;
 use Symfony\Component\EventDispatcher\Event;
 
 class PreRunEvent extends Event
 {
     /**
-     * @var StatementInterface[]
+     * @var \GraphAware\Common\Cypher\StatementInterface[]
      */
     private $statements;
 
-    /**
-     * @param StatementInterface[] $statements
-     */
     public function __construct(array $statements)
     {
         $this->statements = $statements;
     }
 
     /**
-     * @return StatementInterface[]
+     * @return \GraphAware\Common\Cypher\StatementInterface[]
      */
     public function getStatements()
     {
         return $this->statements;
     }
+
 }

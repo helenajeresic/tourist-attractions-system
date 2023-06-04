@@ -11,9 +11,9 @@
 
 namespace GraphAware\Bolt\Result\Type;
 
-use GraphAware\Common\Type\Relationship as BaseRelationshipInterface;
+use GraphAware\Common\Type\RelationshipInterface;
 
-class UnboundRelationship extends MapAccess implements BaseRelationshipInterface
+class UnboundRelationship extends MapAccess implements RelationshipInterface
 {
     /**
      * @var string
@@ -26,8 +26,9 @@ class UnboundRelationship extends MapAccess implements BaseRelationshipInterface
     protected $type;
 
     /**
-     * @param string       $identity
-     * @param string       $type
+     * UnboundRelationship constructor.
+     * @param string $identity
+     * @param string $type
      * @param string array $properties
      */
     public function __construct($identity, $type, array $properties)
@@ -38,7 +39,7 @@ class UnboundRelationship extends MapAccess implements BaseRelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return string
      */
     public function identity()
     {
@@ -46,7 +47,7 @@ class UnboundRelationship extends MapAccess implements BaseRelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @return string
      */
     public function type()
     {
@@ -54,10 +55,12 @@ class UnboundRelationship extends MapAccess implements BaseRelationshipInterface
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $type
+     * @return bool
      */
     public function hasType($type)
     {
         return $this->type === $type;
     }
+
 }

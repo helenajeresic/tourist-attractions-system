@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace GraphAware\Common\Type;
 
 interface Path
@@ -16,14 +15,14 @@ interface Path
     /**
      * Returns the start node of the path.
      *
-     * @return Node
+     * @return NodeInterface
      */
     public function start();
 
     /**
      * Returns the end node of the path.
      *
-     * @return Node
+     * @return NodeInterface
      */
     public function end();
 
@@ -37,32 +36,32 @@ interface Path
     /**
      * Returns whether or not the path contains the given node.
      *
-     * @param Node $node
+     * @param NodeInterface $node
      *
      * @return bool
      */
-    public function containsNode(Node $node);
+    public function containsNode(NodeInterface $node);
 
     /**
      * Returns whether or not the path contains the given relationship.
      *
-     * @param Relationship $relationship
+     * @param RelationshipInterface $relationship
      *
      * @return bool
      */
-    public function containsRelationship(Relationship $relationship);
+    public function containsRelationship(RelationshipInterface $relationship);
 
     /**
      * Returns the nodes in the path, nodes will appear in the same order as they appear in the path.
      *
-     * @return Node[]
+     * @return NodeInterface[]
      */
     public function nodes();
 
     /**
      * Returns the relationships in the path, relationships will appear in the same order as they appear in the path.
      *
-     * @return Relationship[]
+     * @return RelationshipInterface[]
      */
     public function relationships();
 }

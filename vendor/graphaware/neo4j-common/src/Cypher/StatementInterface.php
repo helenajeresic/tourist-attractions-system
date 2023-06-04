@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace GraphAware\Common\Cypher;
 
 interface StatementInterface
@@ -22,21 +21,6 @@ interface StatementInterface
      * @return array
      */
     public function parameters();
-
-    /**
-     * @return null|string
-     */
-    public function getTag();
-
-    /**
-     * @return bool
-     */
-    public function hasTag();
-
-    /**
-     * @return StatementType
-     */
-    public function statementType();
 
     /**
      * @param string $text

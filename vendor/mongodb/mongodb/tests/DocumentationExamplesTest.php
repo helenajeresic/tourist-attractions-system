@@ -2,15 +2,21 @@
 
 namespace MongoDB\Tests;
 
+use MongoDB\BSON\Binary;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\Driver\Cursor;
+use MongoDB\Driver\Exception\CommandException;
 use MongoDB\Driver\Exception\Exception;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\WriteConcern;
+use MongoDB\Tests\SpecTests\ClientSideEncryptionSpecTest;
 
+use function base64_decode;
 use function in_array;
+use function microtime;
 use function ob_end_clean;
 use function ob_start;
 use function var_dump;
@@ -1135,10 +1141,6 @@ class DocumentationExamplesTest extends FunctionalTestCase
 
     public function testAggregation_example_4(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('$lookup does not support "let" option');
-        }
-
         $db = new Database($this->manager, $this->getDatabaseName());
 
         // phpcs:disable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
@@ -1290,7 +1292,7 @@ class DocumentationExamplesTest extends FunctionalTestCase
 
         $client = static::createTestClient();
 
-        /* The WC is required: https://docs.mongodb.com/manual/core/transactions/#transactions-and-locks */
+        /* The WC is required: https://mongodb.com/docs/manual/core/transactions/#transactions-and-locks */
         $client->hr->dropCollection('employees', ['writeConcern' => new WriteConcern('majority')]);
         $client->reporting->dropCollection('events', ['writeConcern' => new WriteConcern('majority')]);
 
@@ -1470,7 +1472,7 @@ class DocumentationExamplesTest extends FunctionalTestCase
 
         $client = static::createTestClient();
 
-        /* The WC is required: https://docs.mongodb.com/manual/core/transactions/#transactions-and-locks */
+        /* The WC is required: https://mongodb.com/docs/manual/core/transactions/#transactions-and-locks */
         $client->hr->dropCollection('employees', ['writeConcern' => new WriteConcern('majority')]);
         $client->reporting->dropCollection('events', ['writeConcern' => new WriteConcern('majority')]);
 
@@ -1575,6 +1577,119 @@ class DocumentationExamplesTest extends FunctionalTestCase
         ob_end_clean();
     }
 
+    public function testSnapshotQueries(): void
+    {
+        if (version_compare($this->getServerVersion(), '5.0.0', '<')) {
+            $this->markTestSkipped('Snapshot queries outside of transactions are not supported');
+        }
+
+        if (! ($this->isReplicaSet() || $this->isShardedClusterUsingReplicasets())) {
+            $this->markTestSkipped('Snapshot read concern is only supported with replicasets');
+        }
+
+        $client = static::createTestClient();
+
+        $catsCollection = $client->selectCollection('pets', 'cats');
+        $catsCollection->drop();
+        $catsCollection->insertMany([
+            ['name' => 'Whiskers', 'color' => 'white', 'adoptable' => true],
+            ['name' => 'Garfield', 'color' => 'orange', 'adoptable' => false],
+        ]);
+
+        $dogsCollection = $client->selectCollection('pets', 'dogs');
+        $dogsCollection->drop();
+        $dogsCollection->insertMany([
+            ['name' => 'Toto', 'color' => 'black',  'adoptable' => true],
+            ['name' => 'Milo', 'color' => 'black', 'adoptable' => false],
+            ['name' => 'Brian', 'color' => 'white', 'adoptable' => true],
+        ]);
+
+        if ($this->isShardedCluster()) {
+            $this->preventStaleDbVersionError('pets', 'cats');
+            $this->preventStaleDbVersionError('pets', 'dogs');
+        } else {
+            $this->waitForSnapshot('pets', 'cats');
+            $this->waitForSnapshot('pets', 'dogs');
+        }
+
+        ob_start();
+
+        // Start Snapshot Query Example 1
+        $catsCollection = $client->selectCollection('pets', 'cats');
+        $dogsCollection = $client->selectCollection('pets', 'dogs');
+
+        $session = $client->startSession(['snapshot' => true]);
+
+        $adoptablePetsCount = $catsCollection->aggregate(
+            [
+                ['$match' => ['adoptable' => true]],
+                ['$count' => 'adoptableCatsCount'],
+            ],
+            ['session' => $session]
+        )->toArray()[0]->adoptableCatsCount;
+
+        $adoptablePetsCount += $dogsCollection->aggregate(
+            [
+                ['$match' => ['adoptable' => true]],
+                ['$count' => 'adoptableDogsCount'],
+            ],
+            ['session' => $session]
+        )->toArray()[0]->adoptableDogsCount;
+
+        var_dump($adoptablePetsCount);
+        // End Snapshot Query Example 1
+
+        ob_end_clean();
+
+        $this->assertSame(3, $adoptablePetsCount);
+
+        $catsCollection->drop();
+        $dogsCollection->drop();
+
+        $salesCollection = $client->selectCollection('retail', 'sales');
+        $salesCollection->drop();
+        $salesCollection->insertMany([
+            ['shoeType' => 'boot', 'price' => 30, 'saleDate' => new UTCDateTime()],
+        ]);
+
+        if ($this->isShardedCluster()) {
+            $this->preventStaleDbVersionError('retail', 'sales');
+        } else {
+            $this->waitForSnapshot('retail', 'sales');
+        }
+
+        // Start Snapshot Query Example 2
+        $salesCollection = $client->selectCollection('retail', 'sales');
+
+        $session = $client->startSession(['snapshot' => true]);
+
+        $totalDailySales = $salesCollection->aggregate(
+            [
+                [
+                    '$match' => [
+                        '$expr' => [
+                            '$gt' => ['$saleDate', [
+                                '$dateSubtract' => [
+                                    'startDate' => '$$NOW',
+                                    'unit' => 'day',
+                                    'amount' => 1,
+                                ],
+                            ],
+                            ],
+                        ],
+                    ],
+                ],
+                ['$count' => 'totalDailySales'],
+            ],
+            ['session' => $session]
+        )->toArray()[0]->totalDailySales;
+        // End Snapshot Query Example 2
+
+        $this->assertSame(1, $totalDailySales);
+
+        $salesCollection->drop();
+    }
+
     /**
      * @doesNotPerformAssertions
      */
@@ -1602,6 +1717,70 @@ class DocumentationExamplesTest extends FunctionalTestCase
         $serverApi = new \MongoDB\Driver\ServerApi('1', false, true);
         $client = new \MongoDB\Client($uriString, [], ['serverApi' => $serverApi]);
         // End Versioned API Example 4
+        // phpcs:enable
+    }
+
+    public function testVersionedApiMigration(): void
+    {
+        if (version_compare($this->getServerVersion(), '5.0.0', '<')) {
+            $this->markTestSkipped('Versioned API is not supported');
+        }
+
+        if (version_compare($this->getServerVersion(), '5.0.9', '>=')) {
+            $this->markTestSkipped('The count command was added to API version 1 (SERVER-63850)');
+        }
+
+        $uriString = static::getUri(true);
+
+        // phpcs:disable SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly
+        $serverApi = new \MongoDB\Driver\ServerApi('1', true);
+        $client = new \MongoDB\Client($uriString, [], ['serverApi' => $serverApi]);
+        $db = $client->selectDatabase($this->getDatabaseName());
+        $db->dropCollection('sales');
+
+        // Start Versioned API Example 5
+        $strtoutc = function (string $datetime) {
+            return new \MongoDB\BSON\UTCDateTime(new \DateTime($datetime));
+        };
+
+        $db->sales->insertMany([
+            ['_id' => 1, 'item' => 'abc', 'price' => 10, 'quantity' => 2, 'date' => $strtoutc('2021-01-01T08:00:00Z')],
+            ['_id' => 2, 'item' => 'jkl', 'price' => 20, 'quantity' => 1, 'date' => $strtoutc('2021-02-03T09:00:00Z')],
+            ['_id' => 3, 'item' => 'xyz', 'price' => 5, 'quantity' => 5, 'date' => $strtoutc('2021-02-03T09:05:00Z')],
+            ['_id' => 4, 'item' => 'abc', 'price' => 10, 'quantity' => 10, 'date' => $strtoutc('2021-02-15T08:00:00Z')],
+            ['_id' => 5, 'item' => 'xyz', 'price' => 5, 'quantity' => 10, 'date' => $strtoutc('2021-02-15T09:05:00Z')],
+            ['_id' => 6, 'item' => 'xyz', 'price' => 5, 'quantity' => 5, 'date' => $strtoutc('2021-02-15T12:05:10Z')],
+            ['_id' => 7, 'item' => 'xyz', 'price' => 5, 'quantity' => 10, 'date' => $strtoutc('2021-02-15T14:12:12Z')],
+            ['_id' => 8, 'item' => 'abc', 'price' => 10, 'quantity' => 5, 'date' => $strtoutc('2021-03-16T20:20:13Z')],
+        ]);
+        // End Versioned API Example 5
+
+        ob_start();
+
+        // Start Versioned API Example 6
+        try {
+            $count = $db->sales->count();
+        } catch (\MongoDB\Driver\Exception\CommandException $e) {
+            echo json_encode($e->getResultDocument());
+            // { "ok": 0, "errmsg": "Provided apiStrict:true, but the command count is not in API Version 1", "code": 323, "codeName": "APIStrictError" }
+        }
+
+        // End Versioned API Example 6
+
+        ob_end_clean();
+
+        $this->assertStringContainsString('Provided apiStrict:true, but the command count is not in API Version 1', $e->getMessage());
+        $this->assertEquals(323 /* APIStrictError */, $e->getCode());
+
+        // Start Versioned API Example 7
+        $count = $db->sales->countDocuments();
+        // End Versioned API Example 7
+
+        $this->assertSame($count, $db->sales->countDocuments());
+
+        // Start Versioned API Example 8
+        // 8
+        // End Versioned API Example 8
         // phpcs:enable
     }
 
@@ -1673,9 +1852,112 @@ class DocumentationExamplesTest extends FunctionalTestCase
     }
 
     /**
-     * Return the test collection name.
+     * Queryable encryption examples (not parsed for server manual includes).
      *
-     * @return string
+     * @see https://jira.mongodb.org/browse/PHPLIB-863
+     * @see ClientSideEncryptionSpecTest::testExplicitEncryption
+     */
+    public function testQueryableEncryption(): void
+    {
+        if ($this->isStandalone() || ($this->isShardedCluster() && ! $this->isShardedClusterUsingReplicasets())) {
+            $this->markTestSkipped('Queryable encryption requires replica sets');
+        }
+
+        if (version_compare($this->getServerVersion(), '6.0.0', '<')) {
+            $this->markTestSkipped('Queryable encryption requires MongoDB 6.0 or later');
+        }
+
+        if (! $this->isEnterprise()) {
+            $this->markTestSkipped('Automatic encryption requires MongoDB Enterprise');
+        }
+
+        // Fetch names for the database and collection under test
+        $collectionName = $this->getCollectionName();
+        $databaseName = $this->getDatabaseName();
+        $namespace = $this->getNamespace();
+
+        /* Create a client without auto encryption. Drop existing data in both
+         * the keyvault and database under test. The latter is necessary since
+         * setUp() only drops the collection under test, which will leave behind
+         * internal collections for queryable encryption. */
+        $client = static::createTestClient();
+        $client->selectDatabase('keyvault')->drop(['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)]);
+        $client->selectDatabase($databaseName)->drop(['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)]);
+
+        /* Although ClientEncryption can be constructed directly, the library
+         * provides a helper to do so. With this method, the keyVaultClient will
+         * default to the same client. */
+        $clientEncryption = $client->createClientEncryption([
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => ['local' => ['key' => new Binary(base64_decode(ClientSideEncryptionSpecTest::LOCAL_MASTERKEY), 0)]],
+        ]);
+
+        // Create two data keys, one for each encrypted field
+        $dataKeyId1 = $clientEncryption->createDataKey('local');
+        $dataKeyId2 = $clientEncryption->createDataKey('local');
+
+        $autoEncryptionOpts = [
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => ['local' => ['key' => new Binary(base64_decode(ClientSideEncryptionSpecTest::LOCAL_MASTERKEY), 0)]],
+            'encryptedFieldsMap' => [
+                $namespace => [
+                    'fields' => [
+                        [
+                            'path' => 'encryptedIndexed',
+                            'bsonType' => 'string',
+                            'keyId' => $dataKeyId1,
+                            'queries' => ['queryType' => 'equality'],
+                        ],
+                        [
+                            'path' => 'encryptedUnindexed',
+                            'bsonType' => 'string',
+                            'keyId' => $dataKeyId2,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $encryptedClient = static::createTestClient(null, [], ['autoEncryption' => $autoEncryptionOpts]);
+
+        /* Create the collection under test. The createCollection() helper will
+         * reference the client's encryptedFieldsMap and create additional,
+         * internal collections automatically. */
+        $encryptedClient->selectDatabase($databaseName)->createCollection($collectionName);
+        $encryptedCollection = $encryptedClient->selectCollection($databaseName, $collectionName);
+
+        /* Using a client with auto encryption, insert a document with encrypted
+         * fields and assert that those fields are automatically decrypted when
+         * querying. */
+        $indexedValue = 'indexedValue';
+        $unindexedValue = 'unindexedValue';
+
+        $encryptedCollection->insertOne([
+            '_id' => 1,
+            'encryptedIndexed' => $indexedValue,
+            'encryptedUnindexed' => $unindexedValue,
+        ]);
+
+        $result = $encryptedCollection->findOne(['encryptedIndexed' => $indexedValue]);
+
+        $this->assertSame(1, $result['_id']);
+        $this->assertSame($indexedValue, $result['encryptedIndexed']);
+        $this->assertSame($unindexedValue, $result['encryptedUnindexed']);
+
+        /* Using a client without auto encryption, query for the same
+         * document and assert that encrypted data is returned. */
+        $unencryptedClient = static::createTestClient();
+        $unencryptedCollection = $unencryptedClient->selectCollection($databaseName, $collectionName);
+
+        $result = $unencryptedCollection->findOne(['_id' => 1]);
+
+        $this->assertSame(1, $result['_id']);
+        $this->assertInstanceOf(Binary::class, $result['encryptedIndexed']);
+        $this->assertInstanceOf(Binary::class, $result['encryptedUnindexed']);
+    }
+
+    /**
+     * Return the test collection name.
      */
     protected function getCollectionName(): string
     {
@@ -1690,5 +1972,43 @@ class DocumentationExamplesTest extends FunctionalTestCase
     private function assertInventoryCount($count): void
     {
         $this->assertCollectionCount($this->getDatabaseName() . '.' . $this->getCollectionName(), $count);
+    }
+
+    private function waitForSnapshot(string $databaseName, string $collectionName): void
+    {
+        $collection = new Collection($this->manager, $databaseName, $collectionName);
+        $session = $this->manager->startSession(['snapshot' => true]);
+
+        /* Retry until a snapshot query succeeds or ten seconds elapse,
+         * whichwever comes first.
+         *
+         * TODO: use hrtime() once the library requires PHP 7.3+ */
+        $retryUntil = microtime(true) + 10;
+
+        do {
+            try {
+                $collection->aggregate(
+                    [['$match' => ['_id' => ['$exists' => true]]]],
+                    ['session' => $session]
+                );
+
+                break;
+            } catch (CommandException $e) {
+                if ($e->getCode() === 246 /* SnapshotUnavailable */) {
+                    continue;
+                }
+
+                throw $e;
+            }
+        } while (microtime(true) < $retryUntil);
+    }
+
+    /**
+     * @see https://jira.mongodb.org/browse/SERVER-39704
+     */
+    private function preventStaleDbVersionError(string $databaseName, string $collectionName): void
+    {
+        $collection = new Collection($this->manager, $databaseName, $collectionName);
+        $collection->distinct('foo');
     }
 }

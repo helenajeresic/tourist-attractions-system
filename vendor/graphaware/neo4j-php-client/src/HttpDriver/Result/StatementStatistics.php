@@ -8,6 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace GraphAware\Neo4j\Client\HttpDriver\Result;
 
 use GraphAware\Common\Result\StatementStatisticsInterface;
@@ -82,7 +83,7 @@ class StatementStatistics implements StatementStatisticsInterface
         $keys = [
             'contains_updates', 'nodes_created', 'nodes_deleted', 'properties_set', 'labels_added', 'labels_removed',
             'indexes_added', 'indexes_removed', 'constraints_added', 'constraints_removed', 'relationship_deleted',
-            'relationships_created',
+            'relationships_created'
         ];
 
         foreach ($statistics as $key => $value) {
@@ -192,14 +193,14 @@ class StatementStatistics implements StatementStatisticsInterface
 
     /**
      * @param $key
-     *
      * @return string
      */
     private function toCamelCase($key)
     {
         list($start, $end) = explode('_', $key);
-        $str = strtolower($start).ucfirst($end);
+        $str = strtolower($start) . ucfirst($end);
 
         return $str;
     }
+
 }

@@ -11,6 +11,4 @@
 
 namespace GraphAware\Bolt\Exception;
 
-class IOException extends \Exception implements BoltExceptionInterface
-{
-}
+class IOException extends \Exception implements BoltExceptionInterface{}

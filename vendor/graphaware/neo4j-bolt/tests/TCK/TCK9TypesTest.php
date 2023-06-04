@@ -2,16 +2,15 @@
 
 namespace GraphAware\Bolt\Tests\TCK;
 
-use GraphAware\Bolt\Tests\IntegrationTestCase;
-use GraphAware\Common\Type\Node;
-use GraphAware\Common\Type\Relationship;
-use GraphAware\Common\Type\Path;
+use GraphAware\Common\Type\NodeInterface;
+use GraphAware\Common\Type\RelationshipInterface;
+use GraphAware\Common\Type\PathInterface;
 
 /**
  * @group tck
  * @group tck9
  */
-class TCK9TypesTest extends IntegrationTestCase
+class TCK9TypesTest extends TCKTestCase
 {
     /**
      * Scenario: To ensure safe escaped provision of user supplied values
@@ -76,7 +75,8 @@ class TCK9TypesTest extends IntegrationTestCase
      */
     public function testResultTypes()
     {
-        $session = $this->getSession();
+        $driver = $this->getDriver();
+        $session = $driver->session();
 
         // null
         $result = $session->run("CREATE (n) RETURN n.key as nilKey");
@@ -161,53 +161,54 @@ class TCK9TypesTest extends IntegrationTestCase
 
         // node
         $result = $session->run("CREATE (n:Node) RETURN n");
-        $this->assertInstanceOf(Node::class, $result->getRecord()->value('n'));
+        $this->assertInstanceOf(NodeInterface::class, $result->getRecord()->value('n'));
         $this->assertTrue($result->getRecord()->value('n')->hasLabel('Node'));
 
         // collection of nodes
         $result = $session->run("UNWIND range(0,2) as r CREATE (n:Node {value: r}) RETURN collect(n) as n");
         $this->assertCount(3, $result->getRecord()->value('n'));
         foreach ($result->getRecord()->value('n') as $k => $n) {
-            $this->assertInstanceOf(Node::class, $n);
+            $this->assertInstanceOf(NodeInterface::class, $n);
             $this->assertEquals($k, $n->value('value'));
         }
 
         // map<string:node>
         $result = $session->run("CREATE (n:X) RETURN {created: n} as x");
-        $this->assertInstanceOf(Node::class, $result->getRecord()->value('x')['created']);
+        $this->assertInstanceOf(NodeInterface::class, $result->getRecord()->value('x')['created']);
 
         // collection of map<string:<collection node>>
         $result = $session->run("UNWIND range(0, 2) as r CREATE (n:X) WITH collect(n) as n RETURN collect({nodes: n}) as x");
         $this->assertCount(1, $result->getRecord()->value('x'));
         $this->assertArrayHasKey('nodes', $result->getRecord()->value('x')[0]);
         $this->assertCount(3, $result->getRecord()->value('x')[0]['nodes']);
-        $this->assertInstanceOf(Node::class, $result->getRecord()->value('x')[0]['nodes'][0]);
+        $this->assertInstanceOf(NodeInterface::class, $result->getRecord()->value('x')[0]['nodes'][0]);
 
         // relationship
         $result = $session->run("CREATE (n:X)-[r:REL]->(z:X) RETURN r");
-        $this->assertInstanceOf(Relationship::class, $result->getRecord()->value('r'));
+        $this->assertInstanceOf(RelationshipInterface::class, $result->getRecord()->value('r'));
         $this->assertEquals('REL', $result->getRecord()->value('r')->type());
         $this->assertTrue($result->getRecord()->value('r')->hasType('REL'));
 
         // path
         $result = $session->run("CREATE p=(n:X)-[:REL]->(o:Y)-[:REL]->(i:Z) RETURN p");
-        $this->assertInstanceOf(Path::class, $result->getRecord()->value('p'));
+        $this->assertInstanceOf(PathInterface::class, $result->getRecord()->value('p'));
         $this->assertCount(3, $result->getRecord()->value('p')->nodes());
         $this->assertCount(2, $result->getRecord()->value('p')->relationships());
         $this->assertEquals(2, $result->getRecord()->value('p')->length());
         foreach ($result->getRecord()->value('p')->nodes() as $node) {
-            $this->assertInstanceOf(Node::class, $node);
+            $this->assertInstanceOf(NodeInterface::class, $node);
         }
         foreach ($result->getRecord()->value('p')->relationships() as $rel) {
-            $this->assertInstanceOf(Relationship::class, $rel);
+            $this->assertInstanceOf(RelationshipInterface::class, $rel);
         }
     }
 
     private function runValue($value)
     {
-        return $this->getSession()
-            ->run("RETURN {x} as x", ['x' => $value])
-            ->getRecord()
-            ->value('x');
+        $driver = $this->getDriver();
+        $session = $driver->session();
+        $result = $session->run("RETURN {x} as x", ['x' => $value]);
+
+        return $result->getRecord()->value('x');
     }
 }

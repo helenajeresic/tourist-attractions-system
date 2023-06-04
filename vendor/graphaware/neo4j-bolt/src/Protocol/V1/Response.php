@@ -15,51 +15,28 @@ use GraphAware\Bolt\Exception\MessageFailureException;
 
 class Response
 {
-    /**
-     * @var bool
-     */
     protected $completed = false;
 
-    /**
-     * @var array
-     */
     protected $records = [];
 
-    /**
-     * @var array
-     */
     protected $metadata = [];
 
-    /**
-     * @param $metadata
-     */
     public function onSuccess($metadata)
     {
         $this->completed = true;
         $this->metadata[] = $metadata;
     }
 
-    /**
-     * @param $metadata
-     */
     public function onRecord($metadata)
     {
         $this->records[] = $metadata;
     }
 
-    /**
-     * @return array
-     */
     public function getRecords()
     {
         return $this->records;
     }
 
-    /**
-     * @param $metadata
-     *
-     * @throws MessageFailureException
-     */
     public function onFailure($metadata)
     {
         $this->completed = true;
@@ -74,9 +51,6 @@ class Response
         return $this->metadata;
     }
 
-    /**
-     * @return bool
-     */
     public function isCompleted()
     {
         return $this->completed;
