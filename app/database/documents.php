@@ -1,6 +1,7 @@
 <?php
 
-require_once 'vendor/autoload.php';
+require_once __SITE_PATH . '/vendor/autoload.php';
+
 use MongoDB\BSON\ObjectId;
 function generateRandomString($length = 10)
 {
@@ -118,6 +119,7 @@ $documents_attractions = [
                         zajedno s Isusom, Marijom i Sv Markom. Svakako potražite i prekrasnu unutrašnjost sa svojim 
                         kipovima poznatih hrvatskih kipara Ivana Meštrovića, zajedno s freskama koje je naslikao 
                         Jozo Kljaković",
+        "image_path" => "image1.jpg",
         "x_coordinate" => 3,
         "y_coordinate" => 40
     ],

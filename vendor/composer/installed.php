@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'daa101c146d132d8a332d2ecd5d8ecdabb6538f0',
+        'reference' => 'b65c9d6c2934881a02a269f75c33a2a68a826372',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'daa101c146d132d8a332d2ecd5d8ecdabb6538f0',
+            'reference' => 'b65c9d6c2934881a02a269f75c33a2a68a826372',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -34,6 +34,15 @@
             'reference' => 'd0fe1af38ef521e419004e5f990ceb8e0b2b001d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../aws/aws-sdk-php',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'clue/stream-filter' => array(
+            'pretty_version' => 'v1.6.0',
+            'version' => '1.6.0.0',
+            'reference' => 'd6169430c7731d8509da7aecd0af756a5747b78e',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../clue/stream-filter',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
@@ -109,6 +118,24 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'laudis/neo4j-php-client' => array(
+            'pretty_version' => '3.0.2',
+            'version' => '3.0.2.0',
+            'reference' => '8a83f4ff26617a89960618e8f2cbb17a57878bd5',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../laudis/neo4j-php-client',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'laudis/typed-enum' => array(
+            'pretty_version' => '1.3.2',
+            'version' => '1.3.2.0',
+            'reference' => '65cddd2ed0eedd1ff642d1ef632745ab2522c976',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../laudis/typed-enum',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'mongodb/mongodb' => array(
             'pretty_version' => '1.11.0',
             'version' => '1.11.0.0',
@@ -154,11 +181,27 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'php-http/async-client-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '*',
+            ),
+        ),
         'php-http/client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
+        ),
+        'php-http/discovery' => array(
+            'pretty_version' => '1.18.1',
+            'version' => '1.18.1.0',
+            'reference' => 'f258b3a1d16acb7b21f3b42d7a2494a733365237',
+            'type' => 'composer-plugin',
+            'install_path' => __DIR__ . '/../php-http/discovery',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'php-http/httplug' => array(
             'pretty_version' => '2.4.0',
@@ -166,6 +209,24 @@
             'reference' => '625ad742c360c8ac580fcc647a1541d29e257f67',
             'type' => 'library',
             'install_path' => __DIR__ . '/../php-http/httplug',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'php-http/message' => array(
+            'pretty_version' => '1.16.0',
+            'version' => '1.16.0.0',
+            'reference' => '47a14338bf4ebd67d317bf1144253d7db4ab55fd',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-http/message',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'php-http/message-factory' => array(
+            'pretty_version' => '1.1.0',
+            'version' => '1.1.0.0',
+            'reference' => '4d8778e1c7d405cbb471574821c1ff5b68cc8f57',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-http/message-factory',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
@@ -197,6 +258,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-factory' => array(
@@ -212,6 +274,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-message' => array(
@@ -227,6 +290,22 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.0',
+                1 => '*',
+            ),
+        ),
+        'psr/simple-cache' => array(
+            'pretty_version' => '3.0.0',
+            'version' => '3.0.0.0',
+            'reference' => '764e0b3939f5ca87cb904f570ef9be2d78a07865',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../psr/simple-cache',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'psr/simple-cache-implementation' => array(
+            'dev_requirement' => false,
+            'provided' => array(
+                0 => '2.0|3.0',
             ),
         ),
         'ralouphie/getallheaders' => array(
@@ -235,6 +314,15 @@
             'reference' => '120b605dfeb996808c31b6477290a714d356e822',
             'type' => 'library',
             'install_path' => __DIR__ . '/../ralouphie/getallheaders',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'stefanak-michal/bolt' => array(
+            'pretty_version' => 'v5.1.1',
+            'version' => '5.1.1.0',
+            'reference' => 'ab7374c1436aa23eb293908c9cc1474e3b0c65d2',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../stefanak-michal/bolt',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

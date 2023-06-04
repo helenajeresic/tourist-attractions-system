@@ -13,11 +13,13 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         '25072dd6e2470089de65ae7bf11d3109' => __DIR__ . '/..' . '/symfony/polyfill-php72/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
+        '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
-        'b067bc7112e384b61c701452d53a14a8' => __DIR__ . '/..' . '/mtdowling/jmespath.php/src/JmesPath.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        'b067bc7112e384b61c701452d53a14a8' => __DIR__ . '/..' . '/mtdowling/jmespath.php/src/JmesPath.php',
+        '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
         '8a9dc1de0ca7e01f3e08231539562f61' => __DIR__ . '/..' . '/aws/aws-sdk-php/src/functions.php',
         '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
     );
@@ -35,6 +37,7 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
         ),
         'P' => 
         array (
+            'Psr\\SimpleCache\\' => 16,
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
         ),
@@ -48,6 +51,11 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
             'MyCLabs\\Enum\\' => 13,
             'MongoDB\\' => 8,
         ),
+        'L' => 
+        array (
+            'Laudis\\TypedEnum\\' => 17,
+            'Laudis\\Neo4j\\' => 13,
+        ),
         'J' => 
         array (
             'JmesPath\\' => 9,
@@ -56,6 +64,8 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
         'H' => 
         array (
             'Http\\Promise\\' => 13,
+            'Http\\Message\\' => 13,
+            'Http\\Discovery\\' => 15,
             'Http\\Client\\' => 12,
         ),
         'G' => 
@@ -67,9 +77,14 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
             'GraphAware\\Common\\' => 18,
             'GraphAware\\Bolt\\' => 16,
         ),
+        'C' => 
+        array (
+            'Clue\\StreamFilter\\' => 18,
+        ),
         'B' => 
         array (
             'Buzz\\' => 5,
+            'Bolt\\' => 5,
         ),
         'A' => 
         array (
@@ -106,6 +121,10 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
         array (
             0 => __DIR__ . '/..' . '/symfony/event-dispatcher',
         ),
+        'Psr\\SimpleCache\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/simple-cache/src',
+        ),
         'Psr\\Http\\Message\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/http-factory/src',
@@ -131,6 +150,14 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
         array (
             0 => __DIR__ . '/..' . '/mongodb/mongodb/src',
         ),
+        'Laudis\\TypedEnum\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laudis/typed-enum/src',
+        ),
+        'Laudis\\Neo4j\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laudis/neo4j-php-client/src',
+        ),
         'JmesPath\\' => 
         array (
             0 => __DIR__ . '/..' . '/mtdowling/jmespath.php/src',
@@ -142,6 +169,15 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
         'Http\\Promise\\' => 
         array (
             0 => __DIR__ . '/..' . '/php-http/promise/src',
+        ),
+        'Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/message-factory/src',
+            1 => __DIR__ . '/..' . '/php-http/message/src',
+        ),
+        'Http\\Discovery\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-http/discovery/src',
         ),
         'Http\\Client\\' => 
         array (
@@ -171,9 +207,17 @@ class ComposerStaticInit9c0bf988e73b1750c250982fe77179d3
         array (
             0 => __DIR__ . '/..' . '/graphaware/neo4j-bolt/src',
         ),
+        'Clue\\StreamFilter\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/clue/stream-filter/src',
+        ),
         'Buzz\\' => 
         array (
             0 => __DIR__ . '/..' . '/kriswallsmith/buzz/lib',
+        ),
+        'Bolt\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/stefanak-michal/bolt/src',
         ),
         'Aws\\' => 
         array (
