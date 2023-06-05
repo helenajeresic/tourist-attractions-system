@@ -104,7 +104,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_1,
         "name" => "Crkva sv. Marka",
-        "descripton" => "Prekrasne kamene ulice i crveni popločani krovovi zgrada u 
+        "description" => "Prekrasne kamene ulice i crveni popločani krovovi zgrada u 
                         srednjovjekovnom Gornjem gradu, zagrebačkom Gornjem gradu, 
                         čine lijepim mjestom za početak razgledavanja glavnog grada Hrvatske. 
                         Nakon dva odvojena mjesta poznata kao Kaptol i Gradec, Gornji grad je dom 
@@ -127,7 +127,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_2,
         "name" => "Zagrebačka katedrala",
-        "descripton" => "Zagrebačka katedrala - Katedrala Uznesenja Blažene Djevice Marije, ranije poznata 
+        "description" => "Zagrebačka katedrala - Katedrala Uznesenja Blažene Djevice Marije, ranije poznata 
                         kao Katedrala Sv. Stjepana, podignuta je na mjestu prethodne strukture koju su 
                         uništili Tatari početkom 1200. godine. Poznat je po dva ukrašena tornja, sadašnja 
                         katedrala sagrađena je u kasnijoj polovici 13. stoljeća, iako su napravljene mnoge 
@@ -143,7 +143,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_3,
         "name" => "Muzej Mimara",
-        "descripton" => "Muzej Mimara stvoren je za smještaj zbirke koju je 1972. 
+        "description" => "Muzej Mimara stvoren je za smještaj zbirke koju je 1972. 
                         godine darovao privatni sakupljač Ante Topic Mimara.
                         U 1895 neorenesansnoj zgradi posebno dizajniranoj za to, 
                         ova opsežna zbirka pokriva širok raspon predmeta iz raznolikost 
@@ -161,7 +161,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_4,
         "name" => "Umjetnički paviljon i Galerija Meštrović",
-        "descripton" => "Umjetnički paviljon, izgrađen za međunarodnu izložbu u Budimpešti 1896. 
+        "description" => "Umjetnički paviljon, izgrađen za međunarodnu izložbu u Budimpešti 1896. 
                         godine, dobio je svoj stalni dom nakon što je originalni željezni okvir 
                         prevezen i rekonstruiran na svojoj aktualnoj lokaciji. 
                         Značajan za njegovu živopisnu žute žalbe, Art Paviljon danas se koristi 
@@ -180,7 +180,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_5,
         "name" => "Arheološki i etnografski muzeji",
-        "descripton" => "S naglaskom na bogatu povijest Hrvatske, Arheoloski muzej u 
+        "description" => "S naglaskom na bogatu povijest Hrvatske, Arheoloski muzej u 
                         Zagrebu ima pet glavnih zbirki s oko 400.000 komada, od kojih su 
                         mnogi iz lokalnog područja. Od posebnog je interesa muzejska izložba 
                         egipatskih mumija (tkanina iz mumije Zagreba pokazuje skriptu koja se 
@@ -201,7 +201,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_6,
         "name" => "Hrvatsko narodno kazalište",
-        "descripton" => "Hrvatsko narodno kazalište, izgrađeno 1895. bečkim arhitektima Hermannom 
+        "description" => "Hrvatsko narodno kazalište, izgrađeno 1895. bečkim arhitektima Hermannom 
                         Helmerom i Ferdinandom Fellnerom, nalazi se na sjeverozapadnom kutu zagrebačke Zelene potkove
                         u Donjem gradu. Službeno otvoren 1894. od strane Austro-Ugarskog cara Franje Josipa I., 
                         ova impozantna žuta struktura u Trgu Marsala značajna je značajka Donji grad, Izgrađen u 
@@ -216,7 +216,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_7,
         "name" => "Moderna galerija",
-        "descripton" => "U Zagrebu je Galerija moderne umjetnosti (Moderna galerija) Donji 
+        "description" => "U Zagrebu je Galerija moderne umjetnosti (Moderna galerija) Donji 
                         Grad u veličanstvenoj palači Vraniczany, sagrađena 1882. godine. 
                         Dom je brojnih lijepih djela hrvatskih umjetnika iz 19. i 20. stoljeća, 
                         Galerije moderne umjetnosti otvorena 1973. godine, iako je institucija iz 
@@ -232,7 +232,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_8,
         "name" => "Park Maksimir",
-        "descripton" => "Dizajniran u stilu starog engleskog vrta, Maksimirski park (Maksimirska) je prekrasan 
+        "description" => "Dizajniran u stilu starog engleskog vrta, Maksimirski park (Maksimirska) je prekrasan 
                         zeleni prostor koji obuhvaća gotovo 45 hektara. Najveći park u Zagrebu, sadrži dva paviljona: 
                         Bellevue paviljon, izgrađen 1843. i Echo paviljon, dodan nakon švicarskog dizajna. Park također 
                         ima mnoge odlične staze i staze, kao i umjetna jezera, šumovita područja i cvjetne vrtove, što ga 
@@ -248,7 +248,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_9,
         "name" => "Crkva sv. Katarine",
-        "descripton" => "Isusovačka crkva Sv. Katarine sagrađena je u prvoj polovici 17. stoljeća i smatra 
+        "description" => "Isusovačka crkva Sv. Katarine sagrađena je u prvoj polovici 17. stoljeća i smatra 
                         se jednim od najljepših crkava u Zagrebu. Izdvajamo uključuju njegovu prekrasnu 
                         unutrašnjost s mnogim lijepim primjerima barokne umjetnosti, uz reljefne 
                         štukature talijanskog umjetnika Antonio Quadrio iz 1720-ih. Značajno je 
@@ -264,7 +264,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_10,
         "name" => "Toranj Lotrščak",
-        "descripton" => "Izgrađen da čuva južna vrata gradskog zida, kula Lotrščak (Kula Lotrščak) datira 
+        "description" => "Izgrađen da čuva južna vrata gradskog zida, kula Lotrščak (Kula Lotrščak) datira 
                         iz 13. stoljeća i odavno je jedna od najprepoznatljivijih zagrebačkih znamenitosti. 
                         Legenda kaže da je ta velika, četvrtasta romanička kula nekoć održavala 
                         zvono koje je svake noći zazvonilo prije zatvaranja vrata kako bi se stanovnici 
@@ -284,7 +284,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_11,
         "name" => "Gradski muzej",
-        "descripton" => "Gradski muzej (Muzej Grada Zagreba), na zagrebačkom Gornjem gradu, sastoji se od 
+        "description" => "Gradski muzej (Muzej Grada Zagreba), na zagrebačkom Gornjem gradu, sastoji se od 
                         samostana sv. Claira, kula iz 11. stoljeća i 17. stoljeća žitnice.Izgrađen uz 
                         istočni gradski zid, muzej je u funkciji od 1907. godine, a kuća ima 12 kolekcija, uključujući 
                         gotovo 75.000 komada. Zajednički zbirke opisuju povijest Zagreba kroz dokumente, mape, umjetnost, 
@@ -299,7 +299,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_12,
         "name" => "Strossmayerova galerija starih majstora",
-        "descripton" => "Strossmayerova Galerija Starih Majstora nalazi se na drugom katu Hrvatska akademija 
+        "description" => "Strossmayerova Galerija Starih Majstora nalazi se na drugom katu Hrvatska akademija 
                         znanosti i umjetnosti u Donji grad Zagreba. Ova neorenesansna građevina iz 19. 
                         stoljeća naručila je biskup Josip Juraj Strossmayer 1870-ih godina u kojoj je smještena 
                         Akademija i Galerija starih majstora i sadrži zbirku od gotovo 600 komada, koje je i 
@@ -317,7 +317,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_13,
         "name" => "Muzeji naivne umjetnosti i razbijene veze",
-        "descripton" => "Uz mnoge institucije likovne umjetnosti i povijesti, Zagreb ima niz prilično jedinstvenih, 
+        "description" => "Uz mnoge institucije likovne umjetnosti i povijesti, Zagreb ima niz prilično jedinstvenih, 
                         čak i nevjerojatnih muzeja vrijednih posjeta. Jedan od najpopularnijih je Hrvatski muzej 
                         naivnih umjetnosti s brojnim prikazima djela takvih poznatih naivnih umjetnika kao što su 
                         Ivan Generalić, Mraz, Mirko Virius i Smaljic. Također su prikazani slični stilski radovi - 
@@ -333,7 +333,7 @@ $documents_attractions = [
     [
         "_id" => $attraction_id_14,
         "name" => "Botanički vrt grada Zagreba",
-        "descripton" => "Botanički Vrt je izvorno izgrađen kao područje istraživanja za Botanički fakultet 
+        "description" => "Botanički Vrt je izvorno izgrađen kao područje istraživanja za Botanički fakultet 
                         Sveučilišta u Zagrebu. Obuhvaćajući oko 50.000 četvornih metara, 
                         dio je niza parkova, koji čine gradsku Green Horseshoe u Donji grad, 
                         Na osnovi su arboretum, dva bara s brojnim vodenim biljkama, ukrasni most i oko 10.000 

@@ -17,14 +17,13 @@ class sightsController extends BaseController {
             $ss = new SightService();
             $data = $ss->getAllSights();
             $this->registry->template->data = $data;
-            $this->registry->template->show = $data;
+            $this->registry->template->show_attractions = $data;
   
             $this->registry->template->show("sights");
         /*}*/
     }
 
     public function processSelectForm() {
-    
         $selectedList = array();
         if (isset($_POST['lang'])) {           
             foreach ($_POST['lang'] as $selected) {
@@ -44,8 +43,9 @@ class sightsController extends BaseController {
         $data = $ss->getAllSights();
         $this->registry->template->data = $data;
 
+        
         $show = $ss->getShortestPath($selectedList);
-        $this->registry->template->show = $show;
+        $this->registry->template->show_attractions = $show;
         
         $this->registry->template->show("sights");
             

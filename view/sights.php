@@ -28,7 +28,7 @@
                 </div>
 </form>
 
-<?php foreach( $show as $d ) { 
+<?php foreach( $show_attractions as $d ) { 
     $src = "https://tourist-attractions-system-images.s3.eu-north-1.amazonaws.com/" . $d->__get( 'image' ); ?>
 
         <div class="responsive" >
