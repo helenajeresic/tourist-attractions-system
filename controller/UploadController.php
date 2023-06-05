@@ -1,5 +1,8 @@
 <?php 
 
+use Laudis\Neo4j\Authentication\Authenticate;
+use Laudis\Neo4j\Basic\Driver;
+
 class UploadController extends BaseController {
     public function index(){
         $this->registry->template->title = "Upload";
@@ -65,7 +68,9 @@ class UploadController extends BaseController {
         if ($result !== null) {
             echo "Atrakcija s imenom $naziv već postoji.";
         } else {
+            $id = new MongoDB\BSON\ObjectId();
             $document = [
+                '_id' => $id,
                 'name' => $naziv,
                 'description' => $opis,
                 'image_path' => $image_path['name'],
@@ -73,15 +78,25 @@ class UploadController extends BaseController {
                 'y_coordinate' => $y_koordinata,
             ];
             $collection->insertOne($document);
-            
-            echo "Atrakcija uspješno spremljena u bazu.";
+            $this->addToNeo4j($id);
         }
 
 
     }
 
-    function addToNeo4j(){
+    function addToNeo4j($addId){
+        $config = require_once __SITE_PATH . '/app/config.php';
 
+        $uri =  sprintf("http://{$username_mongo}:{$encodedPassword_mongo}@localhost:7474/", $password_mongo);
+        $user_neo4j = $config['neo4j']['username'];
+        $noe4j_password =  $config['neo4j']['password'];
+        $auth = Authenticate::basic($user_neo4j, $noe4j_password);
+        $driver = Driver::create($uri, authenticate: $auth);
+        $session = $driver->createSession();
+
+        $query = 'CREATE (a:Attraction {id: id1});';
+        $param = ['id1' => $addId];
+        $session->run($query, $param);
     }
 
 }
