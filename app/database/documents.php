@@ -126,7 +126,7 @@ $documents_attractions = [
 
     [
         "_id" => $attraction_id_2,
-        "name" => "Zagrebacka katedrala",
+        "name" => "Zagrebačka katedrala",
         "descripton" => "Zagrebačka katedrala - Katedrala Uznesenja Blažene Djevice Marije, ranije poznata 
                         kao Katedrala Sv. Stjepana, podignuta je na mjestu prethodne strukture koju su 
                         uništili Tatari početkom 1200. godine. Poznat je po dva ukrašena tornja, sadašnja 
