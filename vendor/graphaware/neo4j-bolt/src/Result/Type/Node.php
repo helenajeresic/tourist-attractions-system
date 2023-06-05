@@ -11,9 +11,9 @@
 
 namespace GraphAware\Bolt\Result\Type;
 
-use GraphAware\Common\Type\NodeInterface;
+use GraphAware\Common\Type\Node as BaseNodeInterface;
 
-class Node extends MapAccess implements NodeInterface
+class Node extends MapAccess implements BaseNodeInterface
 {
     /**
      * @var int
@@ -26,8 +26,7 @@ class Node extends MapAccess implements NodeInterface
     protected $labels;
 
     /**
-     * Node constructor.
-     * @param int $identity
+     * @param int   $identity
      * @param array $labels
      * @param array $properties
      */
@@ -39,7 +38,7 @@ class Node extends MapAccess implements NodeInterface
     }
 
     /**
-     * @return int
+     * {@inheritdoc}
      */
     public function identity()
     {
@@ -47,7 +46,7 @@ class Node extends MapAccess implements NodeInterface
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
     public function labels()
     {
@@ -55,10 +54,9 @@ class Node extends MapAccess implements NodeInterface
     }
 
     /**
-     * @param string $label
-     * @return bool
+     * {@inheritdoc}
      */
-    function hasLabel($label)
+    public function hasLabel($label)
     {
         return in_array($label, $this->labels);
     }

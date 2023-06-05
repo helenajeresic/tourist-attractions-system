@@ -7,7 +7,6 @@ use MongoDB\Driver\Exception\CommandException;
 use MongoDB\Driver\Exception\ExecutionTimeoutException;
 use MongoDB\Driver\Exception\RuntimeException;
 use MongoDB\Driver\Exception\ServerException;
-use MongoDB\Tests\UnifiedSpecTests\Constraint\Matches;
 use PHPUnit\Framework\Assert;
 use stdClass;
 use Throwable;
@@ -20,7 +19,6 @@ use function PHPUnit\Framework\assertInstanceOf;
 use function PHPUnit\Framework\assertIsArray;
 use function PHPUnit\Framework\assertIsBool;
 use function PHPUnit\Framework\assertIsInt;
-use function PHPUnit\Framework\assertIsObject;
 use function PHPUnit\Framework\assertIsString;
 use function PHPUnit\Framework\assertNotInstanceOf;
 use function PHPUnit\Framework\assertNotNull;
@@ -28,7 +26,6 @@ use function PHPUnit\Framework\assertNull;
 use function PHPUnit\Framework\assertObjectHasAttribute;
 use function PHPUnit\Framework\assertSame;
 use function PHPUnit\Framework\assertStringContainsStringIgnoringCase;
-use function PHPUnit\Framework\assertThat;
 use function PHPUnit\Framework\assertTrue;
 use function property_exists;
 use function sprintf;
@@ -61,9 +58,6 @@ final class ExpectedError
 
     /** @var string|null */
     private $codeName;
-
-    /** @var Matches|null */
-    private $matchesResultDocument;
 
     /** @var array */
     private $includedLabels = [];
@@ -104,11 +98,6 @@ final class ExpectedError
         if (isset($o->errorCodeName)) {
             assertIsString($o->errorCodeName);
             $this->codeName = $o->errorCodeName;
-        }
-
-        if (isset($o->errorResponse)) {
-            assertIsObject($o->errorResponse);
-            $this->matchesResultDocument = new Matches($o->errorResponse, $entityMap);
         }
 
         if (isset($o->errorLabelsContain)) {
@@ -163,11 +152,6 @@ final class ExpectedError
         if (isset($this->codeName)) {
             assertInstanceOf(ServerException::class, $e);
             $this->assertCodeName($e);
-        }
-
-        if (isset($this->matchesResultDocument)) {
-            assertInstanceOf(CommandException::class, $e);
-            assertThat($e->getResultDocument(), $this->matchesResultDocument, 'CommandException result document matches');
         }
 
         if (! empty($this->excludedLabels) || ! empty($this->includedLabels)) {

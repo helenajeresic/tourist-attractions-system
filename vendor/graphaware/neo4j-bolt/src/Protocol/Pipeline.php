@@ -11,39 +11,63 @@
 
 namespace GraphAware\Bolt\Protocol;
 
+use GraphAware\Bolt\Exception\BoltInvalidArgumentException;
 use GraphAware\Bolt\Protocol\Message\PullAllMessage;
 use GraphAware\Bolt\Protocol\Message\RunMessage;
 use GraphAware\Bolt\Protocol\V1\Session;
+use GraphAware\Common\Driver\PipelineInterface;
 use GraphAware\Common\Result\ResultCollection;
 
-class Pipeline
+class Pipeline implements PipelineInterface
 {
     /**
-     * @var \GraphAware\Bolt\Protocol\V1\Session
+     * @var Session
      */
     protected $session;
 
     /**
-     * @var \GraphAware\Bolt\Protocol\Message\AbstractMessage[]
+     * @var RunMessage[]
      */
     protected $messages = [];
 
+    /**
+     * @param Session $session
+     */
     public function __construct(Session $session)
     {
         $this->session = $session;
     }
 
     /**
-     * @param string $query
-     * @param array $parameters
+     * {@inheritdoc}
      */
     public function push($query, array $parameters = array(), $tag = null)
     {
+        if (null === $query) {
+            throw new BoltInvalidArgumentException('Statement cannot be null');
+        }
         $this->messages[] = new RunMessage($query, $parameters, $tag);
     }
 
     /**
-     * @return \GraphAware\Bolt\Protocol\Message\AbstractMessage[]
+     * {@inheritdoc}
+     */
+    public function run()
+    {
+        $pullAllMessage = new PullAllMessage();
+        $batch = [];
+        $resultCollection = new ResultCollection();
+
+        foreach ($this->messages as $message) {
+            $result = $this->session->run($message->getStatement(), $message->getParams(), $message->getTag());
+            $resultCollection->add($result);
+        }
+
+        return $resultCollection;
+    }
+
+    /**
+     * @return RunMessage[]
      */
     public function getMessages()
     {
@@ -56,27 +80,5 @@ class Pipeline
     public function isEmpty()
     {
         return empty($this->messages);
-    }
-
-    /**
-     * @return \GraphAware\Common\Result\ResultCollection
-     *
-     * @throws \Exception
-     */
-    public function run()
-    {
-        $pullAllMessage = new PullAllMessage();
-        $batch = [];
-        $resultCollection = new ResultCollection();
-        foreach ($this->messages as $message) {
-            $batch[] = $message;
-            $batch[] = $pullAllMessage;
-        }
-        $this->session->sendMessages($batch);
-        foreach ($this->messages as $message) {
-            $resultCollection->add($this->session->recv($message->getStatement(), $message->getParams(), $message->getTag()), $message->getTag());
-        }
-
-        return $resultCollection;
     }
 }

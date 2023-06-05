@@ -5,16 +5,14 @@ on:
     branches:
       - "v*.*"
       - "master"
-      - "feature/*"
   push:
     branches:
       - "v*.*"
       - "master"
-      - "feature/*"
 
 jobs:
-  phpcs:
-    name: "phpcs"
+  coding-standards:
+    name: "Coding Standards"
     runs-on: "ubuntu-20.04"
 
     strategy:
@@ -22,7 +20,7 @@ jobs:
         php-version:
           - "7.4"
         driver-version:
-          - "mongodb/mongo-php-driver@master"
+          - "stable"
 
     steps:
       - name: "Checkout"

@@ -8,9 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace GraphAware\Neo4j\Client\Connection;
 
+use GraphAware\Neo4j\Client\HttpDriver\Configuration;
 
 class ConnectionManager
 {
@@ -27,12 +27,11 @@ class ConnectionManager
     /**
      * @param string $alias
      * @param string $uri
-     * @param null $config
-     * @param int $timeout
+     * @param null|Configuration   $config
      */
-    public function registerConnection($alias, $uri, $config = null, $timeout)
+    public function registerConnection($alias, $uri, $config = null)
     {
-        $this->registerExistingConnection($alias, new Connection($alias, $uri, $config, $timeout));
+        $this->registerExistingConnection($alias, new Connection($alias, $uri, $config));
     }
 
     /**
@@ -46,12 +45,14 @@ class ConnectionManager
 
     /**
      * @param null $alias
+     *
      * @return \GraphAware\Neo4j\Client\Connection\Connection
      */
     public function getConnection($alias = null)
     {
         if (null === $alias) {
             list($a) = array_keys($this->connections);
+
             return $this->connections[$a];
         }
 

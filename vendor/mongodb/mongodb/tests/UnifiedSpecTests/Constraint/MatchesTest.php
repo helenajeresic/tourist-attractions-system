@@ -10,6 +10,7 @@ use stdClass;
 
 use function hex2bin;
 use function preg_quote;
+use function version_compare;
 
 class MatchesTest extends FunctionalTestCase
 {
@@ -21,14 +22,6 @@ class MatchesTest extends FunctionalTestCase
         $this->assertResult(true, $c, ['x' => 1, 'y' => ['a' => 1, 'b' => 2], 'z' => 3], 'Extra keys in root are permitted');
         $this->assertResult(false, $c, ['x' => 1, 'y' => ['a' => 1, 'b' => 2, 'c' => 3]], 'Extra keys in embedded are not permitted');
         $this->assertResult(true, $c, ['y' => ['b' => 2, 'a' => 1], 'x' => 1], 'Root and embedded key order is not significant');
-    }
-
-    public function testFlexibleNumericComparison(): void
-    {
-        $c = new Matches(['x' => 1, 'y' => 1.0]);
-        $this->assertResult(true, $c, ['x' => 1.0, 'y' => 1.0], 'Float instead of expected int matches');
-        $this->assertResult(true, $c, ['x' => 1, 'y' => 1], 'Int instead of expected float matches');
-        $this->assertResult(false, $c, ['x' => 'foo', 'y' => 1.0], 'Different type does not match');
     }
 
     public function testDoNotAllowExtraRootKeys(): void
@@ -127,28 +120,12 @@ class MatchesTest extends FunctionalTestCase
         $this->assertResult(false, $c, ['x' => ['y' => 1, 'z' => 2]], 'value does not match (embedded)');
     }
 
-    public function testOperatorUnsetOrMatchesWithNestedOperator(): void
-    {
-        // Nested $$unsetOrMatches is redundant, but should behave the same as if it was omitted
-        $c = new Matches(['x' => ['$$unsetOrMatches' => ['$$unsetOrMatches' => ['y' => 1]]]]);
-        $this->assertResult(true, $c, new stdClass(), 'missing value is considered unset (embedded)');
-        $this->assertResult(false, $c, ['x' => null], 'null value is not considered unset (embedded)');
-        $this->assertResult(true, $c, ['x' => ['y' => 1]], 'value matches (embedded)');
-        $this->assertResult(false, $c, ['x' => ['y' => 1, 'z' => 2]], 'value does not match (embedded)');
-
-        $c = new Matches(['x' => ['$$unsetOrMatches' => ['$$exists' => true]]]);
-        $this->assertResult(true, $c, new stdClass(), 'missing value is considered unset (embedded)');
-        $this->assertResult(true, $c, ['x' => null], 'null value is not considered unset (embedded)');
-        $this->assertResult(true, $c, ['x' => ['y' => 1]], 'non-null value is not considered unset (embedded)');
-
-        $c = new Matches(['x' => ['$$unsetOrMatches' => ['$$exists' => false]]]);
-        $this->assertResult(true, $c, new stdClass(), 'missing value is considered unset (embedded)');
-        $this->assertResult(false, $c, ['x' => null], 'null value is not considered unset (embedded)');
-        $this->assertResult(false, $c, ['x' => ['y' => 1]], 'non-null value is not considered unset (embedded)');
-    }
-
     public function testOperatorSessionLsid(): void
     {
+        if (version_compare($this->getFeatureCompatibilityVersion(), '3.6', '<')) {
+            $this->markTestSkipped('startSession() is only supported on FCV 3.6 or higher');
+        }
+
         $session = $this->manager->startSession();
 
         $entityMap = new EntityMap();

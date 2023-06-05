@@ -8,16 +8,18 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace GraphAware\Common;
 
+use GraphAware\Common\Connection\BaseConfiguration;
 use GraphAware\Common\Driver\ConfigInterface;
 use GraphAware\Common\Driver\DriverInterface;
 
 interface GraphDatabaseInterface
 {
     /**
-     * @param string               $uri
-     * @param ConfigInterface|null $config
+     * @param string             $uri
+     * @param BaseConfiguration|null $config
      *
      * @return DriverInterface
      */

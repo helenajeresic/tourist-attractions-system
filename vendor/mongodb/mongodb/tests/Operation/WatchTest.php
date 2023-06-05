@@ -56,10 +56,6 @@ class WatchTest extends FunctionalTestCase
             $options[][] = ['fullDocument' => $value];
         }
 
-        foreach ($this->getInvalidStringValues() as $value) {
-            $options[][] = ['fullDocumentBeforeChange' => $value];
-        }
-
         foreach ($this->getInvalidIntegerValues() as $value) {
             $options[][] = ['maxAwaitTimeMS' => $value];
         }

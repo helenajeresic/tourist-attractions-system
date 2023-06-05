@@ -1,8 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../app/database/mongodb.class.php';
-require_once __DIR__ . '/sight.class.php';
-require_once __DIR__ . '/user.class.php';
+require_once __SITE_PATH . '/app/database/mongodb.class.php';
+require_once __SITE_PATH . '/model/user.class.php';
+require_once __SITE_PATH . '/model/sight.class.php';
 
 
 class SightService {

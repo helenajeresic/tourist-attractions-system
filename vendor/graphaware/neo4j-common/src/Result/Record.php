@@ -8,6 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace GraphAware\Common\Result;
 
 interface Record
@@ -32,17 +33,20 @@ interface Record
      * @param string $key
      *
      * @return mixed
+     *
+     * @deprecated Use <code>get()</code> instead.
      */
     public function value($key);
 
     /**
      * Retrieve the value for the given <code>key</code>.
      *
-     * @param string $key
+     * @param string $key          The identifier key
+     * @param mixed  $defaultValue A default value to return in case the record doesn't contains the given <code>key</code>.
      *
      * @return mixed
      */
-    public function get($key);
+    public function get($key, $defaultValue = null);
 
     /**
      * Returns whether or not this Record contains a value with the given key.
@@ -59,7 +63,7 @@ interface Record
      *
      * @param string $key
      *
-     * @return \GraphAware\Common\Type\NodeInterface
+     * @return \GraphAware\Common\Type\Node
      */
     public function nodeValue($key);
 
@@ -69,7 +73,7 @@ interface Record
      *
      * @param string $key
      *
-     * @return \GraphAware\Common\Type\RelationshipInterface
+     * @return \GraphAware\Common\Type\Relationship
      */
     public function relationshipValue($key);
 
@@ -79,7 +83,7 @@ interface Record
      *
      * @param string $key
      *
-     * @return \GraphAware\Common\Type\PathInterface
+     * @return \GraphAware\Common\Type\Path
      */
     public function pathValue($key);
 

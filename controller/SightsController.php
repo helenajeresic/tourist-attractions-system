@@ -17,6 +17,7 @@ class sightsController extends BaseController{
             $ss = new SightService();
             $data = $ss->getAllSights();
             $this->registry->template->data = $data;
+            error_log("data je " . $data);
   
             $this->registry->template->show("sights");
         /*}*/

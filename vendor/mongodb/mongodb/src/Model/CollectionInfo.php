@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -50,7 +50,7 @@ class CollectionInfo implements ArrayAccess
     /**
      * Return the collection info as an array.
      *
-     * @see https://php.net/oop5.magic#language.oop5.magic.debuginfo
+     * @see http://php.net/oop5.magic#language.oop5.magic.debuginfo
      * @return array
      */
     public function __debugInfo()
@@ -86,6 +86,8 @@ class CollectionInfo implements ArrayAccess
 
     /**
      * Return information about the _id index for the collection.
+     *
+     * @return array
      */
     public function getIdIndex(): array
     {
@@ -95,7 +97,8 @@ class CollectionInfo implements ArrayAccess
     /**
      * Return the "info" property of the server response.
      *
-     * @see https://mongodb.com/docs/manual/reference/command/listCollections/#output
+     * @see https://docs.mongodb.com/manual/reference/command/listCollections/#output
+     * @return array
      */
     public function getInfo(): array
     {
@@ -105,7 +108,7 @@ class CollectionInfo implements ArrayAccess
     /**
      * Return the collection name.
      *
-     * @see https://mongodb.com/docs/manual/reference/command/listCollections/#output
+     * @see https://docs.mongodb.com/manual/reference/command/listCollections/#output
      * @return string
      */
     public function getName()
@@ -116,7 +119,7 @@ class CollectionInfo implements ArrayAccess
     /**
      * Return the collection options.
      *
-     * @see https://mongodb.com/docs/manual/reference/command/listCollections/#output
+     * @see https://docs.mongodb.com/manual/reference/command/listCollections/#output
      * @return array
      */
     public function getOptions()
@@ -127,7 +130,8 @@ class CollectionInfo implements ArrayAccess
     /**
      * Return the collection type.
      *
-     * @see https://mongodb.com/docs/manual/reference/command/listCollections/#output
+     * @see https://docs.mongodb.com/manual/reference/command/listCollections/#output
+     * @return string
      */
     public function getType(): string
     {
@@ -149,7 +153,7 @@ class CollectionInfo implements ArrayAccess
     /**
      * Check whether a field exists in the collection information.
      *
-     * @see https://php.net/arrayaccess.offsetexists
+     * @see http://php.net/arrayaccess.offsetexists
      * @param mixed $key
      * @return boolean
      */
@@ -162,7 +166,7 @@ class CollectionInfo implements ArrayAccess
     /**
      * Return the field's value from the collection information.
      *
-     * @see https://php.net/arrayaccess.offsetget
+     * @see http://php.net/arrayaccess.offsetget
      * @param mixed $key
      * @return mixed
      */
@@ -175,7 +179,7 @@ class CollectionInfo implements ArrayAccess
     /**
      * Not supported.
      *
-     * @see https://php.net/arrayaccess.offsetset
+     * @see http://php.net/arrayaccess.offsetset
      * @param mixed $key
      * @param mixed $value
      * @throws BadMethodCallException
@@ -190,7 +194,7 @@ class CollectionInfo implements ArrayAccess
     /**
      * Not supported.
      *
-     * @see https://php.net/arrayaccess.offsetunset
+     * @see http://php.net/arrayaccess.offsetunset
      * @param mixed $key
      * @throws BadMethodCallException
      * @return void

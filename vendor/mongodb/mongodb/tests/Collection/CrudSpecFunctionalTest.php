@@ -107,6 +107,9 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
 
     /**
      * Assert that the collections contain equivalent documents.
+     *
+     * @param Collection $expectedCollection
+     * @param Collection $actualCollection
      */
     private function assertEquivalentCollections(Collection $expectedCollection, Collection $actualCollection): void
     {
@@ -149,6 +152,8 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
     /**
      * Checks that the server version is within the allowed bounds (if any).
      *
+     * @param string|null $minServerVersion
+     * @param string|null $maxServerVersion
      * @throws PHPUnit_Framework_SkippedTestError
      */
     private function checkServerVersion(?string $minServerVersion, ?string $maxServerVersion): void
@@ -167,6 +172,7 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
     /**
      * Executes an "operation" block.
      *
+     * @param array $operation
      * @return mixed
      * @throws LogicException if the operation is unsupported
      */
@@ -254,7 +260,10 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
     /**
      * Executes an "outcome" block.
      *
-     * @param mixed $result
+     * @param array            $operation
+     * @param array            $outcome
+     * @param mixed            $result
+     * @param RuntimeException $exception
      * @return mixed
      * @throws LogicException if the operation is unsupported
      */
@@ -291,6 +300,8 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
      *
      * If no result can be extracted, null will be returned.
      *
+     * @param array            $operation
+     * @param RuntimeException $exception
      * @return mixed
      */
     private function extractResultFromException(array $operation, array $outcome, RuntimeException $exception)
@@ -321,6 +332,7 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
     /**
      * Executes the "result" section of an "outcome" block.
      *
+     * @param array $operation
      * @param mixed $expectedResult
      * @param mixed $actualResult
      * @throws LogicException if the operation is unsupported
@@ -486,6 +498,9 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
 
     /**
      * Initializes data in the test collections.
+     *
+     * @param array $initialData
+     * @param array $expectedData
      */
     private function initializeData(array $initialData, ?array $expectedData = null): void
     {
@@ -500,6 +515,9 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
 
     /**
      * Prepares a request element for a bulkWrite operation.
+     *
+     * @param array $request
+     * @return array
      */
     private function prepareBulkWriteRequest(array $request): array
     {
@@ -542,6 +560,9 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
 
     /**
      * Prepares arguments for findOneAndReplace and findOneAndUpdate operations.
+     *
+     * @param array $arguments
+     * @return array
      */
     private function prepareFindAndModifyArguments(array $arguments): array
     {

@@ -43,7 +43,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#not-primary-keep-connection-pool
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id10
      */
     public function testNotPrimaryKeepsConnectionPool(): void
     {
@@ -79,7 +79,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#not-primary-reset-connection-pool
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id11
      */
     public function testNotPrimaryResetConnectionPool(): void
     {
@@ -106,11 +106,8 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             $this->assertSame(self::NOT_PRIMARY, $e->getCode());
         }
 
-        /* Verify that the connection pool has been cleared and that a new
-         * connection has been created. Use ">=" to allow for the possibility
-         * that the server created additional connections unrelated to this
-         * test. */
-        $this->assertGreaterThanOrEqual($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
+        // Verify that the connection pool has been cleared
+        $this->assertSame($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
 
         // Execute an insert into the test collection of a {test: 1} document and verify that it succeeds.
         $result = $this->insertDocuments(1);
@@ -118,7 +115,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#shutdown-in-progress-reset-connection-pool
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id12
      */
     public function testShutdownResetConnectionPool(): void
     {
@@ -145,11 +142,8 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             $this->assertSame(self::SHUTDOWN_IN_PROGRESS, $e->getCode());
         }
 
-        /* Verify that the connection pool has been cleared and that a new
-         * connection has been created. Use ">=" to allow for the possibility
-         * that the server created additional connections unrelated to this
-         * test. */
-        $this->assertGreaterThanOrEqual($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
+        // Verify that the connection pool has been cleared
+        $this->assertSame($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
 
         // Execute an insert into the test collection of a {test: 1} document and verify that it succeeds.
         $result = $this->insertDocuments(1);
@@ -157,7 +151,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#interrupted-at-shutdown-reset-connection-pool
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id13
      */
     public function testInterruptedAtShutdownResetConnectionPool(): void
     {
@@ -184,11 +178,8 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
             $this->assertSame(self::INTERRUPTED_AT_SHUTDOWN, $e->getCode());
         }
 
-        /* Verify that the connection pool has been cleared and that a new
-         * connection has been created. Use ">=" to allow for the possibility
-         * that the server created additional connections unrelated to this
-         * test. */
-        $this->assertGreaterThanOrEqual($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
+        // Verify that the connection pool has been cleared
+        $this->assertSame($totalConnectionsCreated + 1, $this->getTotalConnectionsCreated());
 
         // Execute an insert into the test collection of a {test: 1} document and verify that it succeeds.
         $result = $this->insertDocuments(1);
@@ -196,7 +187,7 @@ class PrimaryStepDownSpecTest extends FunctionalTestCase
     }
 
     /**
-     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#getmore-iteration
+     * @see https://github.com/mongodb/specifications/tree/master/source/connections-survive-step-down/tests#id9
      */
     public function testGetMoreIteration(): void
     {

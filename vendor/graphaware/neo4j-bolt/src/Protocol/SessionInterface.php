@@ -11,25 +11,39 @@
 
 namespace GraphAware\Bolt\Protocol;
 
-interface SessionInterface
+use GraphAware\Common\Driver\SessionInterface as BaseSessionInterface;
+
+interface SessionInterface extends BaseSessionInterface
 {
+    /**
+     * @return string
+     */
     public static function getProtocolVersion();
 
     /**
-     * @param $statement
-     * @param array $parameters
+     * @param string      $statement
+     * @param array       $parameters
+     * @param null|string $tag
+     *
      * @return \GraphAware\Bolt\Result\Result
      */
-    public function run($statement, array $parameters = array());
+    public function run($statement, array $parameters = array(), $tag = null);
 
+    /**
+     * @param Pipeline $pipeline
+     *
+     * @return mixed
+     */
     public function runPipeline(Pipeline $pipeline);
 
     /**
-     * @return \GraphAware\Bolt\Protocol\Pipeline
+     * @param null|string $query
+     * @param array       $parameters
+     * @param null|string $tag
+     *
+     * @return Pipeline
      */
-    public function createPipeline();
-
-    public function close();
+    public function createPipeline($query = null, array $parameters = array(), $tag = null);
 
     /**
      * @return \GraphAware\Bolt\Protocol\V1\Transaction

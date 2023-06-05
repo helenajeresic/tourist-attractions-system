@@ -223,22 +223,25 @@
         },
         {
             "name": "graphaware/neo4j-bolt",
-            "version": "1.4.0",
+            "version": "1.11.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/graphaware/neo4j-bolt-php.git",
-                "reference": "78332d2b866383fda92dcca6233a33bfaf3b2d38"
+                "reference": "c4fdfc5b4ed52fe409926395a10a22d860ad31ed"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/graphaware/neo4j-bolt-php/zipball/78332d2b866383fda92dcca6233a33bfaf3b2d38",
-                "reference": "78332d2b866383fda92dcca6233a33bfaf3b2d38",
+                "url": "https://api.github.com/repos/graphaware/neo4j-bolt-php/zipball/c4fdfc5b4ed52fe409926395a10a22d860ad31ed",
+                "reference": "c4fdfc5b4ed52fe409926395a10a22d860ad31ed",
                 "shasum": ""
             },
             "require": {
-                "graphaware/neo4j-common": "^2.0",
+                "ext-bcmath": "*",
+                "ext-mbstring": "*",
+                "graphaware/neo4j-common": "^3.4",
                 "myclabs/php-enum": "^1.4",
-                "symfony/event-dispatcher": "^2.7|^3.0"
+                "php": ">= 5.6",
+                "symfony/event-dispatcher": "^2.7|^3.0|^4.0"
             },
             "require-dev": {
                 "behat/behat": "~3.0.4",
@@ -267,20 +270,20 @@
                 "source": "https://github.com/graphaware/neo4j-bolt-php/tree/master"
             },
             "abandoned": true,
-            "time": "2016-04-21T11:57:11+00:00"
+            "time": "2017-12-12T08:26:08+00:00"
         },
         {
             "name": "graphaware/neo4j-common",
-            "version": "2.2.1",
+            "version": "3.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/graphaware/neo4j-php-commons.git",
-                "reference": "ed3eafedb5923bea7e8b15c71d0f5a860aed0b4e"
+                "reference": "a1aef65e3275c006a9c91ca8be7d800e8391b514"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/graphaware/neo4j-php-commons/zipball/ed3eafedb5923bea7e8b15c71d0f5a860aed0b4e",
-                "reference": "ed3eafedb5923bea7e8b15c71d0f5a860aed0b4e",
+                "url": "https://api.github.com/repos/graphaware/neo4j-php-commons/zipball/a1aef65e3275c006a9c91ca8be7d800e8391b514",
+                "reference": "a1aef65e3275c006a9c91ca8be7d800e8391b514",
                 "shasum": ""
             },
             "require": {
@@ -317,25 +320,26 @@
                 "issues": "https://github.com/graphaware/neo4j-php-commons/issues",
                 "source": "https://github.com/graphaware/neo4j-php-commons/tree/master"
             },
-            "time": "2016-05-06T15:11:19+00:00"
+            "time": "2017-06-08T21:29:20+00:00"
         },
         {
             "name": "graphaware/neo4j-php-client",
-            "version": "4.2.1",
+            "version": "4.6.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/graphaware/neo4j-php-client.git",
-                "reference": "0ee055fc124a453f893997adab5947ec33a9c462"
+                "reference": "8120b988fb15ca9e4ff5ed4faa42b0b0ad0fc65b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/graphaware/neo4j-php-client/zipball/0ee055fc124a453f893997adab5947ec33a9c462",
-                "reference": "0ee055fc124a453f893997adab5947ec33a9c462",
+                "url": "https://api.github.com/repos/graphaware/neo4j-php-client/zipball/8120b988fb15ca9e4ff5ed4faa42b0b0ad0fc65b",
+                "reference": "8120b988fb15ca9e4ff5ed4faa42b0b0ad0fc65b",
                 "shasum": ""
             },
             "require": {
-                "graphaware/neo4j-bolt": "^1.0",
-                "graphaware/neo4j-common": "^2.0",
+                "ext-bcmath": "*",
+                "ext-mbstring": "*",
+                "graphaware/neo4j-bolt": "^1.5",
                 "guzzlehttp/guzzle": "^6.0",
                 "myclabs/php-enum": "^1.4",
                 "php": ">= 5.6",
@@ -378,7 +382,7 @@
                 "source": "https://github.com/graphaware/neo4j-php-client/tree/master"
             },
             "abandoned": true,
-            "time": "2016-05-06T16:12:05+00:00"
+            "time": "2016-12-09T08:57:48+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -941,22 +945,22 @@
         },
         {
             "name": "mongodb/mongodb",
-            "version": "1.15.0",
+            "version": "1.11.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mongodb/mongo-php-library.git",
-                "reference": "3a681a3b2f2c0ebac227a3b86bb9057d0e6eb8f8"
+                "reference": "e4aa59ab15b6fe00a0e56b6772f8b515a0f01bf0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mongodb/mongo-php-library/zipball/3a681a3b2f2c0ebac227a3b86bb9057d0e6eb8f8",
-                "reference": "3a681a3b2f2c0ebac227a3b86bb9057d0e6eb8f8",
+                "url": "https://api.github.com/repos/mongodb/mongo-php-library/zipball/e4aa59ab15b6fe00a0e56b6772f8b515a0f01bf0",
+                "reference": "e4aa59ab15b6fe00a0e56b6772f8b515a0f01bf0",
                 "shasum": ""
             },
             "require": {
                 "ext-hash": "*",
                 "ext-json": "*",
-                "ext-mongodb": "^1.15.0",
+                "ext-mongodb": "^1.12.0",
                 "jean85/pretty-package-versions": "^1.2 || ^2.0.1",
                 "php": "^7.2 || ^8.0",
                 "symfony/polyfill-php80": "^1.19"
@@ -964,13 +968,12 @@
             "require-dev": {
                 "doctrine/coding-standard": "^9.0",
                 "squizlabs/php_codesniffer": "^3.6",
-                "symfony/phpunit-bridge": "^5.2",
-                "vimeo/psalm": "^4.28"
+                "symfony/phpunit-bridge": "^5.2"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.15.x-dev"
+                    "dev-master": "1.11.x-dev"
                 }
             },
             "autoload": {
@@ -1005,9 +1008,9 @@
             ],
             "support": {
                 "issues": "https://github.com/mongodb/mongo-php-library/issues",
-                "source": "https://github.com/mongodb/mongo-php-library/tree/1.15.0"
+                "source": "https://github.com/mongodb/mongo-php-library/tree/1.11.0"
             },
-            "time": "2022-11-23T04:45:35+00:00"
+            "time": "2021-12-14T23:38:18+00:00"
         },
         {
             "name": "mtdowling/jmespath.php",
@@ -2545,5 +2548,5 @@
     "prefer-lowest": false,
     "platform": [],
     "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.3.0"
 }

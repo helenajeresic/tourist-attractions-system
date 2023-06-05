@@ -7,10 +7,15 @@ class UploadController extends BaseController {
         $this->registry->template->show("upload");
     }
 
-    public function processUpdate(){
+    public function processUpload(){
+        $this->processImageUpload();
+        $this->addUploadToMongo();
+    }
+
+    function processImageUpload(){
         require_once __SITE_PATH . '/app/start.php';
-        if(isset($_FILES['file'])) {
-            $file = $_FILES['file'];
+        if(isset($_FILES['slika'])) {
+            $file = $_FILES['slika'];
             $name = $file['name'];
             $tmp_name = $file['tmp_name'];
             $extension = explode('.',$name);
@@ -38,6 +43,45 @@ class UploadController extends BaseController {
         else{
             error_log("Error nije dobro poslan file");
         }
+    }
+
+    function addUploadToMongo(){
+        require_once __SITE_PATH . '/vendor/autoload.php';
+        require_once __SITE_PATH . '/app/database/mongodb.class.php';
+        $naziv = $_POST['naziv'];
+        $opis = $_POST['opis'];
+        $x_koordinata = $_POST['x-koordinata'];
+        $y_koordinata = $_POST['y-koordinata'];
+        $image_path = $_FILES['slika'];
+        
+        $mongo_Client = mongoDB::getCLient();
+        $mongo_Database = mongoDB::getDatabase();
+        $mongo_manager = mongoDB::getManager();
+
+        $collection = $mongo_Database->attractions;
+        $filter = ['Naziv' => $naziv];
+        $result = $collection->findOne($filter);
+
+        if ($result !== null) {
+            echo "Atrakcija s imenom $naziv već postoji.";
+        } else {
+            $document = [
+                'name' => $naziv,
+                'description' => $opis,
+                'image_path' => $image_path['name'],
+                'x_coordinate' => $x_koordinata,
+                'y_coordinate' => $y_koordinata,
+            ];
+            $collection->insertOne($document);
+            
+            echo "Atrakcija uspješno spremljena u bazu.";
+        }
+
+
+    }
+
+    function addToNeo4j(){
+
     }
 
 }

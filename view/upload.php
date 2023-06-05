@@ -1,28 +1,21 @@
 <?php require_once __SITE_PATH . '/view/_header.php';?>
-<form action="<?php echo __SITE_URL . 'index.php?rt=upload/processUpdate'?>" method="post" enctype="multipart/form-data">
-    <!--<div>
-        <label for="name">Naziv atrakcije:</label>
-        <input type="text" name="name" id="name">
-    </div>
-    
-    <div>
-        <label for="name">Opis atrakcije:</label>
-        <textarea name="description" id="description"></textarea>
-    </div>
+    <form action="<?php echo __SITE_URL . 'index.php?rt=upload/processUpload'?>" method="post" enctype="multipart/form-data">
+        <label for="naziv">Naziv atrakcije:</label>
+        <input type="text" name="naziv" id="naziv" required><br>
 
-    <label for="xcoordinate">x koordinata:</label>
-    <input type="text" name="xcoordinate" id="xcoordinate">
-    </div>
+        <label for="opis">Opis atrakcije:</label>
+        <textarea name="opis" id="opis" required></textarea><br>
 
-    <div>
-    <label for="ycoordinate">y koordinata:</label>
-    <input type="text" name="ycoordinate" id="ycoordinate">-->
+        <label for="x-koordinata">X-koordinata atrakcije:</label>
+        <input type="number" name="x-koordinata" id="x-koordinata" required><br>
 
-    <div> 
-        <input type="file" name="file">
+        <label for="y-koordinata">Y-koordinata atrakcije:</label>
+        <input type="number" name="y-koordinata" id="y-koordinata" required><br>
+
+        <label for="slika">Slika:</label>
+        <input type="file" name="slika" id="slika" required><br>
+
         <input type="submit" value="Upload">
-    </div>
-
-    <!--<input type="submit" value="Submit">-->
+    </form>
 </form>
 <?php require_once __SITE_PATH . '/view/_footer.php';?>

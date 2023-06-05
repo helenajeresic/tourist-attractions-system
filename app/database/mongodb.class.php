@@ -27,6 +27,15 @@ class mongoDB{
                 exit('PDO Error : ' . $e->getMessage());
             }
         }
+        else if(mongoDB::$database === null && mongoDB::$client === null){
+            try{
+                mongoDB::$client = mongoDB::getClient();
+                mongoDB::$database = mongoDB::$client->selectDatabase("projekt");
+            }
+            catch (PDOException $e){
+                exit('PDO Error : ' . $e->getMessage());
+            }
+        }
         return mongoDB::$database;
     }
 

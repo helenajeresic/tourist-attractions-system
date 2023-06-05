@@ -24,7 +24,6 @@ use function is_array;
 use function is_float;
 use function is_int;
 use function is_object;
-use function ltrim;
 use function PHPUnit\Framework\assertIsBool;
 use function PHPUnit\Framework\assertIsString;
 use function PHPUnit\Framework\assertMatchesRegularExpression;
@@ -38,7 +37,6 @@ use function PHPUnit\Framework\logicalOr;
 use function range;
 use function sprintf;
 use function strpos;
-use function strrchr;
 
 use const PHP_INT_SIZE;
 
@@ -67,9 +65,6 @@ class Matches extends Constraint
 
     /** @var ComparisonFailure|null */
     private $lastFailure;
-
-    /** @var Factory */
-    private $comparatorFactory;
 
     public function __construct($value, ?EntityMap $entityMap = null, $allowExtraRootKeys = true, $allowOperators = true)
     {
@@ -244,19 +239,6 @@ class Matches extends Constraint
     private function assertMatchesOperator(BSONDocument $operator, $actual, string $keyPath): void
     {
         $name = self::getOperatorName($operator);
-
-        if ($name === '$$exists') {
-            assertIsBool($operator['$$exists'], '$$exists requires bool');
-
-            /* If we get to this point, the field itself must already exist so
-             * we need only fail if $$exists is false. */
-            if ($operator['$$exists'] === false) {
-                $key = ltrim(strrchr($keyPath, '.'), '.');
-                self::failAt(sprintf('$actual has unexpected key "%s"', $key), $keyPath);
-            }
-
-            return;
-        }
 
         if ($name === '$$type') {
             assertThat(

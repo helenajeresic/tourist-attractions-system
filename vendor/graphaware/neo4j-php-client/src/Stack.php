@@ -13,7 +13,7 @@ namespace GraphAware\Neo4j\Client;
 
 use GraphAware\Common\Cypher\Statement;
 
-class Stack
+class Stack implements StackInterface
 {
     /**
      * @var null|string
@@ -26,13 +26,18 @@ class Stack
     protected $connectionAlias;
 
     /**
-     * @var \GraphAware\Common\Cypher\Statement[]
+     * @var Statement[]
      */
     protected $statements = [];
 
     /**
-     * Stack constructor.
-     * @param null $tag
+     * @var Statement[]
+     */
+    protected $preflights = [];
+
+    /**
+     * @param null        $tag
+     * @param null|string $connectionAlias
      */
     public function __construct($tag = null, $connectionAlias = null)
     {
@@ -41,22 +46,52 @@ class Stack
     }
 
     /**
-     * @param string|null $tag
-     * @return \GraphAware\Neo4j\Client\Stack
+     * @param null|string $tag
+     * @param null|string $connectionAlias
+     *
+     * @return StackInterface
      */
     public static function create($tag = null, $connectionAlias = null)
     {
-        return new self($tag, $connectionAlias);
+        return new static($tag, $connectionAlias);
     }
 
     /**
-     * @param $query
+     * @param string     $query
      * @param null|array $parameters
+     * @param null|array $tag
      */
     public function push($query, $parameters = null, $tag = null)
     {
         $params = null !== $parameters ? $parameters : array();
         $this->statements[] = Statement::create($query, $params, $tag);
+    }
+
+    /**
+     * @param $query
+     * @param array|null $parameters
+     * @param array|null $tag
+     */
+    public function addPreflight($query, $parameters = null, $tag = null)
+    {
+        $params = null !== $parameters ? $parameters : array();
+        $this->preflights[] = Statement::create($query, $params, $tag);
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasPreflights()
+    {
+        return !empty($this->preflights);
+    }
+
+    /**
+     * @return \GraphAware\Common\Cypher\Statement[]
+     */
+    public function getPreflights()
+    {
+        return $this->preflights;
     }
 
     /**
@@ -68,7 +103,7 @@ class Stack
     }
 
     /**
-     * @return \GraphAware\Common\Cypher\Statement[]
+     * @return Statement[]
      */
     public function statements()
     {
