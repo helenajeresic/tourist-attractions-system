@@ -30,8 +30,8 @@ class sightsController extends BaseController {
             }
             
         }
-        if(isset($_POST['firstAttraction'])){
-            error_log("odabran je " . $_POST['firstAttraction']);
+        if(isset($_POST['lan'])){
+            error_log("odabran je " . $_POST['lan']);
         }
         $this->processSelect($selectedList);
     }
