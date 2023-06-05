@@ -50,3 +50,12 @@ body {
     display: table;
     clear: both;
   }
+
+.myform-container{
+    width: 600px;
+    margin: 50px auto;
+}
+
+.myform-container select{
+    width: 300px;
+}
