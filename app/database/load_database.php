@@ -1,6 +1,4 @@
 <?php
-// require_once __DIR__ . '/mongodb.class.php';
-// require_once __DIR__ . '/documents.php';
 require_once __SITE_PATH . '/app/database/mongodb.class.php';
 require_once __SITE_PATH . '/app/database/documents.php';
 require_once __SITE_PATH . '/vendor/autoload.php';

@@ -1,16 +1,20 @@
 <?php
 
 require_once __SITE_PATH . '/app/database/mongodb.class.php';
-require_once __SITE_PATH . '/model/user.class.php';
+
 require_once __SITE_PATH . '/model/sight.class.php';
+require_once __SITE_PATH . '/model/user.class.php';
 
 use MongoDB\Driver\Query;
 
 class SightService {
 
+	public function __construct(){}
+
 	function getAllSights(){
 		
 		try{
+			$client = mongoDB::getClient();
 			$database = mongoDB::getDatabase();
 
 			$collection = $database->attractions;
@@ -21,9 +25,9 @@ class SightService {
 		
 		$arr = array();
 
-		foreach($documents as $document)
-			$arr[] = new sight($document['_id'], $document['name'], $document['description'], $document['image_path'], $document['x_coordinate'], $document['y_coordinate']);
-		
+		foreach($documents as $document){
+			$arr[] = new sight($document["_id"], $document["name"], $document["description"], $document["image_path"], $document["x_coordinate"], $document["y_coordinate"]);
+		}
 		return $arr;
 	}
 
@@ -39,18 +43,17 @@ class SightService {
 
 			foreach($attractionList as $attractionId) {
 				try {
-					$filter = ['_id'=> new MongoDB\BSON\ObjectId($attractionId)];	
+					$filter = ["_id" => new MongoDB\BSON\ObjectId($attractionId)];	
 
-					$document = $collection->find($filter)->toArray();
-						var_dump($document);
-						$arr[] = new sight(
-								$document->_id,
-								$document->name,
-								$document->description,
-								$document->image_path,
-								$document->x_coordinate,
-								$document->y_coordinate	
-							);
+					$document = $collection->findOne($filter);
+					$arr[] = new sight(
+							$document["_id"],
+							$document["name"],
+							$document["description"],
+							$document["image_path"],
+							$document["x_coordinate"],
+							$document["y_coordinate"]	
+						);
 					
 				} catch (Exception $e) {
 					exit();
