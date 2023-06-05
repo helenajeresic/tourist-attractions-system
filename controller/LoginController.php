@@ -7,6 +7,9 @@ class loginController extends BaseController{
             $this->registry->template->error = false;
             $this->registry->template->show("login");
         }
+        else {
+            header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
+        }
     }
 
     function processLoginForm()
