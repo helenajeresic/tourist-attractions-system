@@ -22,7 +22,7 @@ class UploadController extends BaseController {
             $name = $file['name'];
             $tmp_name = $file['tmp_name'];
             $extension = explode('.',$name);
-            $extension =strtolower(end($extension));
+            $extension = strtolower(end($extension));
             $key = md5((uniqid()));
             $tmp_file_name = "{$key}.{$extension}";
             $tmp_file_path = __SITE_PATH . "/tmp_files/{$tmp_file_name}";
