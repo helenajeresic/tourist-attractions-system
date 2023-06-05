@@ -31,13 +31,51 @@ class SightService {
 		return $arr;
 	}
 
-	function getShortestPath($attractionList) {
-		//za sad vrati samo one koje sam odabrala
-
+	function getShortestPath($attractionList, $firstSelected) {
 		try {
-			$client = mongoDB::getClient();
-			$database = mongoDB::getDatabase();
-			$collection = $database->attractions;
+			$MongoDatabase = mongoDB::getDatabase();
+			$collection = $MongoDatabase->attractions;
+
+			$neoDatabase = Neo4jDB::getConnection();
+
+			$params = [
+				'attractionIds' => $attractionList,
+				'firstSelected' => (int)$firstSelected
+			];
+
+			// $query = 'MATCH (start:Attraction), (end:Attraction)
+            //       WHERE start.id = $firstSelected AND end.id IN $attractionIds
+            //       CALL algo.shortestPath.stream(start, end, "DISTANCE", {weightProperty: "dist"})
+            //       YIELD nodeId, cost
+            //       RETURN algo.getNodeById(nodeId).id AS attractionId, cost
+            //       ORDER BY cost';
+			$query = 'MATCH (start:Attraction {id: $firstSelected}), (end:Attraction)
+			WHERE end.id IN $attractionIds
+			CALL apoc.path.spanningTree(start, {
+			  labelFilter: ">Attraction",
+			  relationshipFilter: ">CONNECTED_TO",
+			  endNodes: $attractionIds,
+			  limit: toInteger(size($attractionIds)) - 1,
+			  weightProperty: "dist"
+			}) YIELD path
+			RETURN collect(path) AS paths';
+        	$result = $neoDatabase->run($query, $params);
+			$idList = array();
+
+			foreach ($result->getResults() as $record) {
+				// $attractionId = $record->get('attractionId');
+				// $cost = $record->get('cost');
+	
+				// $idList[] = $attractionId ;
+				$paths = $record->get('paths');
+    
+				foreach ($paths as $path) {
+					foreach ($path->nodes() as $node) {
+						$attractionId = $node->value('id');
+						$idList[] = $attractionId;
+					}
+				}
+			}
 
 			$arr = array();
 

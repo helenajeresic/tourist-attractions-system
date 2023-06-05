@@ -14,11 +14,11 @@ $password_mongo = $config['mongoDB']['password'];
 $encodedPassword_mongo = urlencode($password_mongo);
 
 $database_mongo =$config['mongoDB']['database'];
-$uri =  sprintf("http://{$username_mongo}:{$encodedPassword_mongo}@localhost:7474/", $password_mongo);
 
 
 $user_neo4j = $config['neo4j']['username'];
 $noe4j_password =  $config['neo4j']['password'];
+$uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $password_mongo);
 
 $auth = Authenticate::basic($user_neo4j, $noe4j_password);
 $driver = Driver::create($uri, authenticate: $auth);

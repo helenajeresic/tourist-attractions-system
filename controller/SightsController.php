@@ -31,12 +31,12 @@ class sightsController extends BaseController {
             
         }
         if(isset($_POST['lan'])){
-            error_log("odabran je " . $_POST['lan']);
+            $firstSelected = $_POST['lan'];
         }
-        $this->processSelect($selectedList);
+        $this->processSelect($selectedList,$firstSelected );
     }
 
-    public function processSelect($selectedList) {
+    public function processSelect($selectedList, $firstSelected) {
         $this->registry->template->title = "Sights";
         $this->registry->template->error = false;
 
@@ -46,7 +46,7 @@ class sightsController extends BaseController {
         $this->registry->template->data = $data;
 
         
-        $show = $ss->getShortestPath($selectedList);
+        $show = $ss->getShortestPath($selectedList, $firstSelected);
         $this->registry->template->show_attractions = $show;
         
         $this->registry->template->show("sights");
