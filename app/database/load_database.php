@@ -18,7 +18,7 @@ $database_mongo =$config['mongoDB']['database'];
 
 $user_neo4j = $config['neo4j']['username'];
 $noe4j_password =  $config['neo4j']['password'];
-$uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $password_mongo);
+$uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
 
 $auth = Authenticate::basic($user_neo4j, $noe4j_password);
 $driver = Driver::create($uri, authenticate: $auth);
@@ -42,8 +42,8 @@ $attractionList = Array();
 
 foreach ($documents_attractions as $document){
     $bulk_attractions->insert($document);
-    $query = 'CREATE (a:Attraction) SET a.id = $_id , a.latitude =$_x_coordinate , a.longitude =$_y_coordinate ';
-    $params = ['_id' => $document['_id'], '_x_coordinate'=> $document['_x_coordinate'] , '_y_coordinate'=> $document['_y_coordinate']];
+    $query = 'CREATE (a:Attraction) SET a.id = $attraction_id, a.x_coordinate =$x_coordinate, a.y_coordinate =$y_coordinate ';
+    $params = ['attraction_id' => $document['_id'], 'x_coordinate'=> $document['x_coordinate'] , 'y_coordinate'=> $document['y_coordinate']];
     $session->run($query, $params);
     array_push($attractionList, array($document['_id'], $document['x_coordinate'], $document['y_coordinate'] ));
 }
@@ -61,10 +61,6 @@ for ($i = 0; $i < count($attractionList); ++$i) {
         $query1 = 'MATCH (a1:Attraction {id: $id1}), (a2:Attraction {id: $id2}) CREATE (a1)-[d:DISTANCE]->(a2) SET d.attribute = $dist';
         $params1 = ['id1' => $attractionList[$i][0], 'id2' => $attractionList[$j][0], 'dist' => (int)$calcDist];
         $result1 = $session->run($query1, $params1);
-
-        // $query2 = 'MATCH (a1:Attraction {id: $id1}), (a2:Attraction {id: $id2}) CREATE (a1)<-[d:DISTANCE]-(a2) SET d.attribute = $dist';
-        // $params2 = ['id1' => $attractionList[$i][0], 'id2' => $attractionList[$j][0], 'dist' => $calcDist];
-        // $result2 = $session->run($query2, $params2);
     }
 }
 

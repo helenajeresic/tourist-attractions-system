@@ -35,11 +35,6 @@ class loginController extends BaseController{
             $_SESSION["user"] = $username;
             header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
         }
-
-        // trivijalna logika, samo za probu
-        // if($username === 'Matej' && $password ==='12345'){
-        //     $_SESSION["user"] = $username;
-        //     header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
     }
 
     function isRegisterd($username, $password){

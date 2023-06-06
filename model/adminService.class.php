@@ -35,9 +35,9 @@ class AdminService {
     function deleteNeo4j($delete){
         $config = require_once __SITE_PATH . '/app/config.php';
 
-        $uri =  sprintf("http://{$username_mongo}:{$encodedPassword_mongo}@localhost:7474/", $password_mongo);
         $user_neo4j = $config['neo4j']['username'];
         $noe4j_password =  $config['neo4j']['password'];
+        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
         $auth = Authenticate::basic($user_neo4j, $noe4j_password);
         $driver = Driver::create($uri, authenticate: $auth);
         $session = $driver->createSession();
@@ -108,25 +108,31 @@ class AdminService {
                 'y_coordinate' => $y_koordinata,
             ];
             $collection->insertOne($document);
-            $this->addToNeo4j($id);
+            $this->addToNeo4j($id, $x_koordinata, $y_koordinata);
         }
 
 
     }
 
-    function addToNeo4j($addId){
+    function addToNeo4j($addId , $x_koordinata, $y_koordinata){
         $config = require_once __SITE_PATH . '/app/config.php';
 
-        $uri =  sprintf("http://{$username_mongo}:{$encodedPassword_mongo}@localhost:7474/", $password_mongo);
         $user_neo4j = $config['neo4j']['username'];
         $noe4j_password =  $config['neo4j']['password'];
+        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
         $auth = Authenticate::basic($user_neo4j, $noe4j_password);
         $driver = Driver::create($uri, authenticate: $auth);
         $session = $driver->createSession();
 
-        $query = 'CREATE (a:Attraction {id: id1});';
-        $param = ['id1' => $addId];
+        $query = 'CREATE (n:Node {id: $addId, x_coordinate: $x_koordinata, y_coordinate: $y_koordinata});';
+        $param = ['id1' => $addId, 'x_koordinata' => $x_koordinata, 'y_koordinata' => $y_koordinata ];
         $session->run($query, $param);
+
+        // ovo možda ne radi zbog apoc plugina
+        $session->run('MATCH (a1:Attraction {id: $id1}), (a2:Attraction) WHERE a1.id <> a2.id
+            WITH point({x: a1.x_coord, y: a1.y_coord}) AS point1, point({x: a2.x_coord, y: a2.y_coord}) AS point2
+            WITH  apoc.spatial.distance(point1, point2) AS dist CREATE (a1)-[d:DISTANCE]->(a2) SET d.attribute = dist ' 
+        , $param) ;
     }
 
     //update
@@ -173,10 +179,48 @@ class AdminService {
         return $distance;
     }
 
+    function updateCoordinates($id, $xcoord, $ycoord){
+        $config = require_once __SITE_PATH . '/app/config.php';
+
+        $user_neo4j = $config['neo4j']['username'];
+        $noe4j_password =  $config['neo4j']['password'];
+        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
+        $auth = Authenticate::basic($user_neo4j, $noe4j_password);
+        $driver = Driver::create($uri, authenticate: $auth);
+        $session = $driver->createSession();
+
+        $mongo_Client = mongoDB::getCLient();
+        $mongo_Database = mongoDB::getDatabase();
+        $mongo_manager = mongoDB::getManager();
+
+        $collection = $mongo_Database->attractions;
+
+        $id_ = new MongoDB\BSON\ObjectId($id);
+        $filter = ['_id' => $id_];
+        $set = ['$set' => ['x_coordinate' => $xcoord , 'y_coordinate' => $ycoord]];
+        $collection->updateOne($filter,$set);
+
+        $query1 = 'MATCH (a1:Attraction {id: $id1}) SET a1.x_coordinate = $x_coordinate , a1.y_coordinate = $y_coordinate';
+        $params1 = ['id1' => $id, 'x_coordinate' => $xcoord, 'y_coordinate' => $ycoord ];
+        $session->run($query1, $params1);
+
+        $ss = new SightService();
+        $data = $ss->getAllSights();
+
+        foreach($data as $d) {
+            $calcDist = $this->euclideanDistance($xcoord, $ycoord, $d->x_coord, $d->y_coord);
+
+            $query1 = 'MATCH (a1:Attraction {id: $id1})-[d:DISTANCE]-(a2:Attraction {id: $id2}) WHERE a1.id <> a2.id SET d.attribute = $dist';
+            $params1 = ['id1' => $id_, 'id2' => $d->id, 'dist' => $calcDist];
+            $session->run($query1, $params1);
+        }
+
+    }
+
     function updateXCoordinate($id, $xcoord) {
         $config = require_once __SITE_PATH . '/app/config.php';
 
-        $uri =  sprintf("http://{$username_mongo}:{$encodedPassword_mongo}@localhost:7474/", $password_mongo);
+        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
         $user_neo4j = $config['neo4j']['username'];
         $noe4j_password =  $config['neo4j']['password'];
         $auth = Authenticate::basic($user_neo4j, $noe4j_password);
@@ -194,6 +238,10 @@ class AdminService {
         $set = ['$set' => ['x_coordinate' => $xcoord]];
         $collection->updateOne($filter,$set);
 
+        $query1 = 'MATCH (a1:Attraction {id: $id1} SET a1.x_coordinate = $x_coordinate';
+        $params1 = ['id1' => $id, 'x_coordinate' => $xcoord ];
+        $session->run($query1, $params1);
+
         $document = $collection->findOne($filter);
         $ycoord = $document['y_coordinate'];
 
@@ -201,14 +249,10 @@ class AdminService {
         $data = $ss->getAllSights();
 
         foreach($data as $d) {
-            $calcDist = $this->euclideanDistance($xcoord, $ycoord, $d->__get('x_coord'), $d->__get('y_coord'));
+            $calcDist = $this->euclideanDistance($xcoord, $ycoord, $d->x_coord, $d->y_coord);
 
-            $query1 = 'MATCH (a1:Attraction {id: $id1})-[d:DISTANCE]->(a2:Attraction {id: $id2}) SET d.attribute = $dist';
-            $params1 = ['id1' => $id_, 'id2' => $d->__get('id'), 'dist' => $calcDist];
-            $session->run($query1, $params1);
-
-            $query1 = 'MATCH (a1:Attraction {id: $id1})<-[d:DISTANCE]-(a2:Attraction {id: $id2}) SET d.attribute = $dist';
-            $params1 = ['id1' => $id_, 'id2' => $d->__get('id'), 'dist' => $calcDist];
+            $query1 = 'MATCH (a1:Attraction {id: $id1})-[d:DISTANCE]-(a2:Attraction {id: $id2}) WHERE a1.id <> a2.id SET d.attribute = $dist';
+            $params1 = ['id1' => $id_, 'id2' => $d->id, 'dist' => $calcDist];
             $session->run($query1, $params1);
         }  
     }
@@ -216,7 +260,7 @@ class AdminService {
     function updateYCoordinate($id, $ycoord) {
         $config = require_once __SITE_PATH . '/app/config.php';
 
-        $uri =  sprintf("http://{$username_mongo}:{$encodedPassword_mongo}@localhost:7474/", $password_mongo);
+        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
         $user_neo4j = $config['neo4j']['username'];
         $noe4j_password =  $config['neo4j']['password'];
         $auth = Authenticate::basic($user_neo4j, $noe4j_password);
@@ -234,6 +278,10 @@ class AdminService {
         $set = ['$set' => ['y_coordinate' => $ycoord]];
         $collection->updateOne($filter,$set);
 
+        $query1 = 'MATCH (a1:Attraction {id: $id1} SET a1.y_coordinate = $y_coordinate';
+        $params1 = ['id1' => $id, 'y_coordinate' => $ycoord ];
+        $session->run($query1, $params1);
+
         $document = $collection->findOne($filter);
         $xcoord = $document['x_coordinate'];
 
@@ -241,14 +289,10 @@ class AdminService {
         $data = $ss->getAllSights();
 
         foreach($data as $d) {
-            $calcDist = $this->euclideanDistance($xcoord, $ycoord, $d->__get('x_coord'), $d->__get('y_coord'));
+            $calcDist = $this->euclideanDistance($xcoord, $ycoord, $d->x_coord, $d->y_coord);
 
-            $query1 = 'MATCH (a1:Attraction {id: $id1})-[d:DISTANCE]->(a2:Attraction {id: $id2}) SET d.attribute = $dist';
-            $params1 = ['id1' => $id_, 'id2' => $d->__get('id'), 'dist' => $calcDist];
-            $session->run($query1, $params1);
-
-            $query1 = 'MATCH (a1:Attraction {id: $id1})<-[d:DISTANCE]-(a2:Attraction {id: $id2}) SET d.attribute = $dist';
-            $params1 = ['id1' => $id_, 'id2' => $d->__get('id'), 'dist' => $calcDist];
+            $query1 = 'MATCH (a1:Attraction {id: $id1})-[d:DISTANCE]-(a2:Attraction {id: $id2}) WHERE a1.id <> a2.id SET d.attribute = $dist';
+            $params1 = ['id1' => $id_, 'id2' => $d->id, 'dist' => $calcDist];
             $session->run($query1, $params1);
         }
     }

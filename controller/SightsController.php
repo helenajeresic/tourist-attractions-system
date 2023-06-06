@@ -1,7 +1,7 @@
 <?php
 
-require_once 'model/sight.class.php';
-require_once 'model/sightService.class.php';
+require_once __SITE_PATH .  '/model/sight.class.php';
+require_once __SITE_PATH .  '/model/sightService.class.php';
 
 class sightsController extends BaseController {
     public function index(){

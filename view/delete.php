@@ -13,5 +13,8 @@
                     <br>
                     <input type="submit" name="submit" value="Obrisi!">
                 </div>
+
 </form>
+
+<?php require_once __SITE_PATH . '/view/_goBack.php';?>
 <?php require_once __SITE_PATH . '/view/_footer.php';?>
