@@ -5,6 +5,7 @@ require_once __SITE_PATH . '/model/sightService.class.php';
 require_once __SITE_PATH . '/model/adminService.class.php';
 require_once __SITE_PATH .  '/controller/SightsController.php';
 
+
 class UpdateController extends BaseController {
     public function index(){
         $this->registry->template->title = "Update";
@@ -23,11 +24,13 @@ class UpdateController extends BaseController {
         if(isset($_POST['lang']) && !empty($_POST['lang'])) {
             $selected = $_POST['lang'];
 
+
             if(isset($_POST['naziv']) && !empty($_POST['naziv'])) {
                 $as->updateName($selected,$_POST['naziv']);
             }
 
             if(isset($_POST['opis']) && !empty($_POST['opis'])){
+
                 $as->updateDescription($selected, $_POST['opis']);
             }
 

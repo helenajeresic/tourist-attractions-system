@@ -4,6 +4,7 @@ require_once __SITE_PATH .  '/model/sightService.class.php';
 require_once __SITE_PATH .  '/model/adminService.class.php';
 require_once __SITE_PATH .  '/controller/SightsController.php';
 
+
 class deleteController extends BaseController {
     public function index(){
         $this->registry->template->title = "Delete";
