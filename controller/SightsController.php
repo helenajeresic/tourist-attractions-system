@@ -18,8 +18,19 @@ class sightsController extends BaseController {
             $data = $ss->getAllSights();
             $this->registry->template->data = $data;
             $this->registry->template->show_attractions = $data;
-            $this->registry->template->show("sights");
+            $this->registry->template->show("default");
         /*}*/
+    }
+
+    public function choose() {
+        $this->registry->template->title = "Sights";
+        $this->registry->template->error = false;
+
+        $ss = new SightService();
+        $data = $ss->getAllSights();
+        $this->registry->template->data = $data;
+        $this->registry->template->show_attractions = $data;
+        $this->registry->template->show("sights");
     }
 
     public function processSelectForm() {

@@ -1,5 +1,5 @@
 body {
-  background-color: lightblue;
+  background-color: rgb(203, 183, 158);
 }
 
 div.gallery {
@@ -8,7 +8,15 @@ div.gallery {
 }
 
 div.name {
+  font-size: 20px;
   text-align: center;
+  font-weight: bold;
+}
+
+div.showmore{
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 div.gallery img {
@@ -68,15 +76,10 @@ a{
   text-decoration: none;
   color:#fff;
   background: #111;
+
 }
 
-.all#blur.active {
- filter:blur(20px);
- pointer-events: none;
- user-select: none;
-}
-
-#popup {
+.popup {
   position: fixed;
   top: 40%;
   left: 50%;
@@ -90,15 +93,48 @@ a{
   transition: 0.5s;
 }
 
-#popup.active{
+.popup.active{
   top: 50%;
   visibility: visible;
   opacity: 1;
   transition: 0.5s;
 }
 
+/*navigacijska traka*/
+/* Add a black background color to the top navigation */
+.topnav {
+  background-color: #111;
+  overflow: hidden;
+}
 
+/* Style the links inside the navigation bar */
+.topnav a {
+  margin-top: 0px;
+  float: left;
+  display: block;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 14px;
+  text-decoration: none;
+  font-size: 17px;
+}
 
+/* Change the color of links on hover */
+.topnav a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+/* Add an active class to highlight the current page */
+.topnav a.active {
+  background-color: #04AA6D;
+  color: white;
+}
+
+/* Hide the link that should open and close the topnav on small screens */
+.topnav .icon {
+  display: none;
+}
 
 
 

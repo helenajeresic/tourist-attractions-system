@@ -8,22 +8,22 @@
             <?php } ?>
 
         </select><br>
-
+        <br>
         <label for="naziv">Naziv atrakcije:</label>
         <input type="text" name="naziv" id="naziv" ><br>
-
+        <br>
         <label for="opis">Opis atrakcije:</label>
         <textarea name="opis" id="opis"></textarea><br>
-
+        <br>
         <label for="x-koordinata">X-koordinata atrakcije:</label>
         <input type="number" name="x-koordinata" id="x-koordinata" ><br>
-
+        <br>
         <label for="y-koordinata">Y-koordinata atrakcije:</label>
         <input type="number" name="y-koordinata" id="y-koordinata"><br>
-
+        <br>
         <label for="slika">Slika:</label>
         <input type="file" name="slika" id="slika"><br>
-
+        <br>
         <input type="submit" value="Update">
     </form>
 </form>
