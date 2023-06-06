@@ -5,7 +5,7 @@ require_once __SITE_PATH . '/app/Router.php';
 require_once __SITE_PATH . '/app/Template.php';
 require_once __SITE_PATH . '/app/database/mongodb.class.php';
 require_once __SITE_PATH . '/app/database/neo4j.class.php';
-//require_once __SITE_PATH . '/app/database/load_database.php';
+// require_once __SITE_PATH . '/app/database/load_database.php';
 
 spl_autoload_register(function ($class_name){
     $filename = $class_name . '.php';

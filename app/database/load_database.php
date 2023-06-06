@@ -42,8 +42,8 @@ $attractionList = Array();
 
 foreach ($documents_attractions as $document){
     $bulk_attractions->insert($document);
-    $query = 'CREATE (a:Attraction) SET a.id = $_id';
-    $params = ['_id' => $document['_id']];
+    $query = 'CREATE (a:Attraction) SET a.id = $_id , a.latitude =$_x_coordinate , a.longitude =$_y_coordinate ';
+    $params = ['_id' => $document['_id'], '_x_coordinate'=> $document['_x_coordinate'] , '_y_coordinate'=> $document['_y_coordinate']];
     $session->run($query, $params);
     array_push($attractionList, array($document['_id'], $document['x_coordinate'], $document['y_coordinate'] ));
 }
@@ -59,12 +59,12 @@ for ($i = 0; $i < count($attractionList); ++$i) {
         $calcDist = euclideanDistance($attractionList[$i][1], $attractionList[$i][2], $attractionList[$j][1], $attractionList[$j][2]);
 
         $query1 = 'MATCH (a1:Attraction {id: $id1}), (a2:Attraction {id: $id2}) CREATE (a1)-[d:DISTANCE]->(a2) SET d.attribute = $dist';
-        $params1 = ['id1' => $attractionList[$i][0], 'id2' => $attractionList[$j][0], 'dist' => $calcDist];
+        $params1 = ['id1' => $attractionList[$i][0], 'id2' => $attractionList[$j][0], 'dist' => (int)$calcDist];
         $result1 = $session->run($query1, $params1);
 
-        $query2 = 'MATCH (a1:Attraction {id: $id1}), (a2:Attraction {id: $id2}) CREATE (a1)<-[d:DISTANCE]-(a2) SET d.attribute = $dist';
-        $params2 = ['id1' => $attractionList[$i][0], 'id2' => $attractionList[$j][0], 'dist' => $calcDist];
-        $result2 = $session->run($query2, $params2);
+        // $query2 = 'MATCH (a1:Attraction {id: $id1}), (a2:Attraction {id: $id2}) CREATE (a1)<-[d:DISTANCE]-(a2) SET d.attribute = $dist';
+        // $params2 = ['id1' => $attractionList[$i][0], 'id2' => $attractionList[$j][0], 'dist' => $calcDist];
+        // $result2 = $session->run($query2, $params2);
     }
 }
 

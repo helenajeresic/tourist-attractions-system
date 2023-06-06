@@ -1,11 +1,13 @@
 <?php
 
 require_once __SITE_PATH . '/app/database/mongodb.class.php';
+require_once __SITE_PATH . '/app/database/neo4j.class.php';
 
 require_once __SITE_PATH . '/model/sight.class.php';
 require_once __SITE_PATH . '/model/user.class.php';
 
 use MongoDB\Driver\Query;
+use Laudis\Neo4j\Types\Path;
 
 class SightService {
 
@@ -33,56 +35,84 @@ class SightService {
 
 	function getShortestPath($attractionList, $firstSelected) {
 		try {
-			$MongoDatabase = mongoDB::getDatabase();
-			$collection = $MongoDatabase->attractions;
 
+			$sizeOfAttractionList = count($attractionList);
+			$idList = array();
+			if($attractionList !== [$firstSelected]){
+			//micemo firstSelected iz ukupne liste
+			$attractionList = array_diff($attractionList, [$firstSelected]);
 			$neoDatabase = Neo4jDB::getConnection();
 
 			$params = [
-				'attractionIds' => $attractionList,
-				'firstSelected' => (int)$firstSelected
+				'attractionIds' => array_values($attractionList),
+				'firstSelected' => $firstSelected,
+				'sizeOfAttractionList' => (int)$sizeOfAttractionList -1
 			];
 
-			// $query = 'MATCH (start:Attraction), (end:Attraction)
-            //       WHERE start.id = $firstSelected AND end.id IN $attractionIds
-            //       CALL algo.shortestPath.stream(start, end, "DISTANCE", {weightProperty: "dist"})
-            //       YIELD nodeId, cost
-            //       RETURN algo.getNodeById(nodeId).id AS attractionId, cost
-            //       ORDER BY cost';
-			$query = 'MATCH (start:Attraction {id: $firstSelected}), (end:Attraction)
-			WHERE end.id IN $attractionIds
-			CALL apoc.path.spanningTree(start, {
-			  labelFilter: ">Attraction",
-			  relationshipFilter: ">CONNECTED_TO",
-			  endNodes: $attractionIds,
-			  limit: toInteger(size($attractionIds)) - 1,
-			  weightProperty: "dist"
-			}) YIELD path
-			RETURN collect(path) AS paths';
-        	$result = $neoDatabase->run($query, $params);
-			$idList = array();
+			
+			$idList[] = $firstSelected;
 
-			foreach ($result->getResults() as $record) {
-				// $attractionId = $record->get('attractionId');
-				// $cost = $record->get('cost');
-	
-				// $idList[] = $attractionId ;
-				$paths = $record->get('paths');
-    
-				foreach ($paths as $path) {
-					foreach ($path->nodes() as $node) {
-						$attractionId = $node->value('id');
-						$idList[] = $attractionId;
+			// $results = $neoDatabase->run('MATCH (p:Attraction {id: $firstSelected})
+			// MATCH (whitelist:Attraction)
+			// WHERE whitelist.id IN $attractionIds
+			// WITH p, collect(whitelist) AS whitelistNodes
+			// CALL apoc.path.spanningTree(p, {
+			// 	relationshipFilter: "DISTANCE>",
+			// 	whitelistNodes: whitelistNodes,
+			// 	uniqueness: "NODE_GLOBAL"
+			// })
+			// YIELD path
+			// RETURN path;' , $params);
+			$results = $neoDatabase->run('MATCH (startNode:Attraction {id: $firstSelected})
+			WITH startNode
+			
+			MATCH (attraction:Attraction)
+			WHERE attraction.id IN $attractionIds AND attraction <> startNode
+			WITH startNode, collect(attraction) AS attractions
+
+			WITH startNode, attractions, apoc.coll.randomItem(attractions) AS endNode
+
+				CALL apoc.algo.dijkstra(
+				startNode,
+				endNode,
+			  "|DISTANCE",
+			  "attribute",
+			  NaN,
+			  size(attractions) + 1
+			) YIELD path, weight
+			WHERE ALL(n IN attractions WHERE n IN nodes(path))
+			AND size(nodes(path)) = size(attractions) + 1
+							
+			RETURN nodes(path) AS nodes, relationships(path) AS relationships;' , $params);
+			// WHERE length(path) = $sizeOfAttractionList
+			if($results->isEmpty()) {
+				error_log("prazno");
+				sleep(2);
+			}
+			else {
+				// LIMITALI smo na 1 tako da ce se ovo vjv samo 1 vrtiti
+				foreach ($results as $result) {
+					$paths = $result->values();
+
+					foreach($paths as $path){
+						foreach($path as $node){
+							error_log("nod je" . $node->get('id'));
+						}
 					}
+					
 				}
 			}
-
+		}
+		else{
+			$idList = array();
+		}
+			$MongoDatabase = mongoDB::getDatabase();
+			$collection = $MongoDatabase->attractions;
 			$arr = array();
 
-			foreach($attractionList as $attractionId) {
+			foreach($idList as $attractionId) {
 				try {
 					$filter = ["_id" => new MongoDB\BSON\ObjectId($attractionId)];	
-
 					$document = $collection->findOne($filter);
 					$arr[] = new sight(
 							$document["_id"],

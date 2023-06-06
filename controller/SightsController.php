@@ -47,7 +47,13 @@ class sightsController extends BaseController {
 
         
         $show = $ss->getShortestPath($selectedList, $firstSelected);
-        $this->registry->template->show_attractions = $show;
+        if($show === null){
+            $this->registry->template->error = true;
+            echo "nisu dobro obradene znamenitorsi";
+        }
+        else {
+            $this->registry->template->show_attractions = $show;
+        }
         
         $this->registry->template->show("sights");
             
