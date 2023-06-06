@@ -12,7 +12,6 @@
         <?php } ?>
 
     </select>
-    <h4> Korištenje: CTRL + klik miša za odabir više atrakcija.<h4>
     <h3>Koju želiš da ti bude prva:</h3>
     <select name="lan" id="firstAttraction" class="form-control"></select>
 
