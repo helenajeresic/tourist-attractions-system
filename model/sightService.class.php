@@ -11,17 +11,32 @@ use Laudis\Neo4j\Types\Path;
 
 class SightService {
 
+	private $mongoAttraction = null;
+    private $neo4jSession = null;
 	public function __construct(){}
+
+	private function getNeoSession(){
+        if($this->neo4jSession === null){
+            require_once __SITE_PATH . '/app/database/neo4j.class.php';
+            $this->neo4jSession = Neo4jDB::getConnection();
+        }
+        return $this->neo4jSession;
+    }
+    private function getMongoAttractions(){
+
+        if($this->mongoAttraction === null){
+            require_once __SITE_PATH . '/app/database/mongodb.class.php';
+            $mongo_Database = mongoDB::getDatabase();
+            $this->mongoAttraction = $mongo_Database->attractions;
+        }
+        return $this->mongoAttraction;
+    }
 
 	function getAllSights(){
 		
 		try{
-			$client = mongoDB::getClient();
-			$database = mongoDB::getDatabase();
-
-			$collection = $database->attractions;
+			$collection = $this->getMongoAttractions();
 			$documents = $collection->find();
-		
 		}
 		catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
 		
@@ -41,7 +56,7 @@ class SightService {
 			if($attractionList !== [$firstSelected]){
 			//micemo firstSelected iz ukupne liste
 			$attractionList = array_diff($attractionList, [$firstSelected]);
-			$neoDatabase = Neo4jDB::getConnection();
+			$neoDatabase = $this->getNeoSession();
 
 			$params = [
 				'attractionIds' => array_values($attractionList),
@@ -106,8 +121,7 @@ class SightService {
 		else{
 			$idList = array();
 		}
-			$MongoDatabase = mongoDB::getDatabase();
-			$collection = $MongoDatabase->attractions;
+			$collection = $this->getMongoAttractions();
 			$arr = array();
 
 			foreach($idList as $attractionId) {

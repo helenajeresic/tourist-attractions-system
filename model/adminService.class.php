@@ -9,18 +9,38 @@ use Laudis\Neo4j\Basic\Driver;
 
 class AdminService {
 
+    private $mongoAttraction = null;
+    private $neo4jSession = null;
+
+    private $sightService = null;
     public function __construct(){}
 
+    private function getSightService(){
+        if($this->sightService === null){
+            $this->sightService = new SightService();
+        }
+        return $this->sightService;
+    }
+    private function getNeoSession(){
+        if($this->neo4jSession === null){
+            require_once __SITE_PATH . '/app/database/neo4j.class.php';
+            $this->neo4jSession = Neo4jDB::getConnection();
+        }
+        return $this->neo4jSession;
+    }
+    private function getMongoAttractions(){
+
+        if($this->mongoAttraction === null){
+            require_once __SITE_PATH . '/app/database/mongodb.class.php';
+            $mongo_Database = mongoDB::getDatabase();
+            $this->mongoAttraction = $mongo_Database->attractions;
+        }
+        return $this->mongoAttraction;
+    }
     //obrisi
     function deleteMongoDB($delete){
-        require_once __SITE_PATH . '/app/database/mongodb.class.php';
+        $collection = $this->getMongoAttractions();
 
-        $mongo_Client = mongoDB::getCLient();
-        $mongo_Database = mongoDB::getDatabase();
-        $mongo_manager = mongoDB::getManager();
-
-        $collection = $mongo_Database->attractions;
-        
         try {
             $filter = ["_id" => new MongoDB\BSON\ObjectId($delete)];	
 
@@ -28,20 +48,10 @@ class AdminService {
         } catch (Exception $e) {
             exit();
         }
-
-
     }
 
     function deleteNeo4j($delete){
-        $config = require_once __SITE_PATH . '/app/config.php';
-
-        $user_neo4j = $config['neo4j']['username'];
-        $noe4j_password =  $config['neo4j']['password'];
-        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
-        $auth = Authenticate::basic($user_neo4j, $noe4j_password);
-        $driver = Driver::create($uri, authenticate: $auth);
-        $session = $driver->createSession();
-
+        $session = $this->getNeoSession();
         $query = 'MATCH (a:Attraction {id: $id1}) DETACH DELETE a;';
         $param = ['id1' => new MongoDB\BSON\ObjectId($delete)];
         $session->run($query, $param);
@@ -81,23 +91,24 @@ class AdminService {
     function addUploadToDatabases(){
         require_once __SITE_PATH . '/vendor/autoload.php';
         require_once __SITE_PATH . '/app/database/mongodb.class.php';
+        $collection = $this->getMongoAttractions();
+
         $naziv = $_POST['naziv'];
         $opis = $_POST['opis'];
         $x_koordinata = $_POST['x-koordinata'];
         $y_koordinata = $_POST['y-koordinata'];
         $image_path = $_FILES['slika'];
         
-        $mongo_Client = mongoDB::getCLient();
-        $mongo_Database = mongoDB::getDatabase();
-        $mongo_manager = mongoDB::getManager();
 
-        $collection = $mongo_Database->attractions;
-        $filter = ['Naziv' => $naziv];
-        $result = $collection->findOne($filter);
+        $filter = ['name' => $naziv];
+        $result_name = $collection->findOne($filter);
 
-        if ($result !== null) {
-            echo "Atrakcija s imenom $naziv već postoji.";
-        } else {
+        $filter = ['x_coordinate' => $x_koordinata, 'y_coordinate' => $y_koordinata] ;
+        $result_coord = $collection->findOne($filter);
+
+
+        if ($result_name === null || $result_coord === null) {
+            
             $id = new MongoDB\BSON\ObjectId();
             $document = [
                 '_id' => $id,
@@ -110,19 +121,16 @@ class AdminService {
             $collection->insertOne($document);
             $this->addToNeo4j($id, $x_koordinata, $y_koordinata);
         }
-
-
+        if($result_name !== null){
+            echo "Atrakcija s imenom $naziv već postoji.";
+        }
+        if($result_coord === null){
+            echo "Atrakcija s kordinatama ($x_koordinata , $y_koordinata)  već postoji.";
+        }
     }
 
     function addToNeo4j($addId , $x_koordinata, $y_koordinata){
-        $config = require_once __SITE_PATH . '/app/config.php';
-
-        $user_neo4j = $config['neo4j']['username'];
-        $noe4j_password =  $config['neo4j']['password'];
-        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
-        $auth = Authenticate::basic($user_neo4j, $noe4j_password);
-        $driver = Driver::create($uri, authenticate: $auth);
-        $session = $driver->createSession();
+        $session = $this->getNeoSession();
 
         $query = 'CREATE (n:Node {id: $addId, x_coordinate: $x_koordinata, y_coordinate: $y_koordinata});';
         $param = ['id1' => $addId, 'x_koordinata' => $x_koordinata, 'y_koordinata' => $y_koordinata ];
@@ -130,18 +138,14 @@ class AdminService {
 
         // ovo možda ne radi zbog apoc plugina
         $session->run('MATCH (a1:Attraction {id: $id1}), (a2:Attraction) WHERE a1.id <> a2.id
-            WITH point({x: a1.x_coord, y: a1.y_coord}) AS point1, point({x: a2.x_coord, y: a2.y_coord}) AS point2
+            WITH point({x: a1.x_coordinate, y: a1.y_coordinate}) AS point1, point({x: a2.x_coordinate, y: a2.y_coordinate}) AS point2
             WITH  apoc.spatial.distance(point1, point2) AS dist CREATE (a1)-[d:DISTANCE]->(a2) SET d.attribute = dist ' 
         , $param) ;
     }
 
     //update
     function updateName($id, $name) {
-        $mongo_Client = mongoDB::getCLient();
-        $mongo_Database = mongoDB::getDatabase();
-        $mongo_manager = mongoDB::getManager();
-        
-        $collection = $mongo_Database->attractions;
+        $collection = $this->getMongoAttractions();
 
         $filter = ['_id' => new MongoDB\BSON\ObjectId($id)];
         $set = ['$set' => ['name' => $name]];
@@ -149,11 +153,7 @@ class AdminService {
     }
 
     function updateDescription($id, $desc) {
-        $mongo_Client = mongoDB::getCLient();
-        $mongo_Database = mongoDB::getDatabase();
-        $mongo_manager = mongoDB::getManager();
-
-        $collection = $mongo_Database->attractions;
+        $collection = $this->getMongoAttractions();
 
         $filter = ['_id' => new MongoDB\BSON\ObjectId($id)];
         $set = ['$set' => ['description' => $desc]];
@@ -163,11 +163,7 @@ class AdminService {
     function updateImage($id, $image) {
         $this->processImageUpload();
         //promijeni u bazi ime slike
-        $mongo_Client = mongoDB::getCLient();
-        $mongo_Database = mongoDB::getDatabase();
-        $mongo_manager = mongoDB::getManager();
-        
-        $collection = $mongo_Database->attractions;
+        $collection = $this->getMongoAttractions();
 
         $filter = ['_id' => new MongoDB\BSON\ObjectId($id)];
         $set = ['$set' => ['image_path' => $image]];
@@ -180,20 +176,9 @@ class AdminService {
     }
 
     function updateCoordinates($id, $xcoord, $ycoord){
-        $config = require_once __SITE_PATH . '/app/config.php';
+        $session = $this->getNeoSession();
 
-        $user_neo4j = $config['neo4j']['username'];
-        $noe4j_password =  $config['neo4j']['password'];
-        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
-        $auth = Authenticate::basic($user_neo4j, $noe4j_password);
-        $driver = Driver::create($uri, authenticate: $auth);
-        $session = $driver->createSession();
-
-        $mongo_Client = mongoDB::getCLient();
-        $mongo_Database = mongoDB::getDatabase();
-        $mongo_manager = mongoDB::getManager();
-
-        $collection = $mongo_Database->attractions;
+        $collection = $this->getMongoAttractions();
 
         $id_ = new MongoDB\BSON\ObjectId($id);
         $filter = ['_id' => $id_];
@@ -204,8 +189,7 @@ class AdminService {
         $params1 = ['id1' => $id, 'x_coordinate' => $xcoord, 'y_coordinate' => $ycoord ];
         $session->run($query1, $params1);
 
-        $ss = new SightService();
-        $data = $ss->getAllSights();
+        $data = $this->getSightService()->getAllSights();
 
         foreach($data as $d) {
             $calcDist = $this->euclideanDistance($xcoord, $ycoord, $d->x_coord, $d->y_coord);
@@ -218,20 +202,9 @@ class AdminService {
     }
 
     function updateXCoordinate($id, $xcoord) {
-        $config = require_once __SITE_PATH . '/app/config.php';
+        $session = $this->getNeoSession();
 
-        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
-        $user_neo4j = $config['neo4j']['username'];
-        $noe4j_password =  $config['neo4j']['password'];
-        $auth = Authenticate::basic($user_neo4j, $noe4j_password);
-        $driver = Driver::create($uri, authenticate: $auth);
-        $session = $driver->createSession();
-
-        $mongo_Client = mongoDB::getCLient();
-        $mongo_Database = mongoDB::getDatabase();
-        $mongo_manager = mongoDB::getManager();
-
-        $collection = $mongo_Database->attractions;
+        $collection = $this->getMongoAttractions();
 
         $id_ = new MongoDB\BSON\ObjectId($id);
         $filter = ['_id' => $id_];
@@ -245,8 +218,7 @@ class AdminService {
         $document = $collection->findOne($filter);
         $ycoord = $document['y_coordinate'];
 
-        $ss = new SightService();
-        $data = $ss->getAllSights();
+        $data = $this->getSightService()->getAllSights();
 
         foreach($data as $d) {
             $calcDist = $this->euclideanDistance($xcoord, $ycoord, $d->x_coord, $d->y_coord);
@@ -258,20 +230,9 @@ class AdminService {
     }
 
     function updateYCoordinate($id, $ycoord) {
-        $config = require_once __SITE_PATH . '/app/config.php';
+        $session = $this->getNeoSession();
 
-        $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
-        $user_neo4j = $config['neo4j']['username'];
-        $noe4j_password =  $config['neo4j']['password'];
-        $auth = Authenticate::basic($user_neo4j, $noe4j_password);
-        $driver = Driver::create($uri, authenticate: $auth);
-        $session = $driver->createSession();
-
-        $mongo_Client = mongoDB::getCLient();
-        $mongo_Database = mongoDB::getDatabase();
-        $mongo_manager = mongoDB::getManager();
-
-        $collection = $mongo_Database->attractions;
+        $collection = $this->getMongoAttractions();
 
         $id_ = new MongoDB\BSON\ObjectId($id);
         $filter = ['_id' => $id_];
@@ -285,8 +246,7 @@ class AdminService {
         $document = $collection->findOne($filter);
         $xcoord = $document['x_coordinate'];
 
-        $ss = new SightService();
-        $data = $ss->getAllSights();
+        $data = $this->getSightService()->getAllSights();
 
         foreach($data as $d) {
             $calcDist = $this->euclideanDistance($xcoord, $ycoord, $d->x_coord, $d->y_coord);

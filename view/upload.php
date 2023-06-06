@@ -1,5 +1,6 @@
 <?php require_once __SITE_PATH . '/view/_header.php';?>
-    <form action="<?php echo __SITE_URL . 'index.php?rt=upload/processUpload'?>" method="post" enctype="multipart/form-data">
+<script src="<?php echo __SITE_URL . 'util/validateRequiredForm.js'; ?>"></script>
+    <form action="<?php echo __SITE_URL . 'index.php?rt=upload/processUpload'?>" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
         <label for="naziv">Naziv atrakcije:</label>
         <input type="text" name="naziv" id="naziv" required><br>
 
