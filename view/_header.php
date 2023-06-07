@@ -8,9 +8,6 @@
     <link rel="stylesheet" type="text/css" href="<?php echo __SITE_URL . 'css/style.css';?>">
 </head>
 <body>  
-    <!-- upute za to kad se napravi login 
-        pobrisi ! ispred isset($_SESSION['username'])
-        i dodaj dio di se provjerava dal je korisnik admin ispred upload/update/delete-->
 
     <?php  if(isset($_SESSION['user'])){?>
         <div class="topnav" id="myTopnav">
