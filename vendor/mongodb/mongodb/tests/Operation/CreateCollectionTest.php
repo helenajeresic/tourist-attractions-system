@@ -7,6 +7,13 @@ use MongoDB\Operation\CreateCollection;
 
 class CreateCollectionTest extends TestCase
 {
+    public function testConstructorPipelineOptionMustBeAList(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The "pipeline" option is not a list (unexpected index: "1")');
+        new CreateCollection($this->getDatabaseName(), $this->getCollectionName(), ['pipeline' => [1 => ['$match' => ['x' => 1]]]]);
+    }
+
     /**
      * @dataProvider provideInvalidConstructorOptions
      */
@@ -29,7 +36,19 @@ class CreateCollectionTest extends TestCase
         }
 
         foreach ($this->getInvalidDocumentValues() as $value) {
+            $options[][] = ['changeStreamPreAndPostImages' => $value];
+        }
+
+        foreach ($this->getInvalidDocumentValues() as $value) {
+            $options[][] = ['clusteredIndex' => $value];
+        }
+
+        foreach ($this->getInvalidDocumentValues() as $value) {
             $options[][] = ['collation' => $value];
+        }
+
+        foreach ($this->getInvalidDocumentValues() as $value) {
+            $options[][] = ['encryptedFields' => $value];
         }
 
         foreach ($this->getInvalidIntegerValues() as $value) {
@@ -50,6 +69,10 @@ class CreateCollectionTest extends TestCase
 
         foreach ($this->getInvalidIntegerValues() as $value) {
             $options[][] = ['maxTimeMS' => $value];
+        }
+
+        foreach ($this->getInvalidArrayValues() as $value) {
+            $options[][] = ['pipeline' => $value];
         }
 
         foreach ($this->getInvalidSessionValues() as $value) {
@@ -82,6 +105,10 @@ class CreateCollectionTest extends TestCase
 
         foreach ($this->getInvalidDocumentValues() as $value) {
             $options[][] = ['validator' => $value];
+        }
+
+        foreach ($this->getInvalidStringValues() as $value) {
+            $options[][] = ['viewOn' => $value];
         }
 
         foreach ($this->getInvalidWriteConcernValues() as $value) {
