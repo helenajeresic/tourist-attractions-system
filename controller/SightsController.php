@@ -5,12 +5,12 @@ require_once __SITE_PATH .  '/model/sightService.class.php';
 
 class sightsController extends BaseController {
     public function index(){
-        /*if(!isset($_SESSION["user"])){
+        if(!isset($_SESSION["user"])){
             $this->registry->template->title = "Login";
             $this->registry->template->error = false;
             $this->registry->template->show("login");
         }
-        else{*/
+        else{
             $this->registry->template->title = "Sights";
             $this->registry->template->error = false;
 
@@ -19,7 +19,7 @@ class sightsController extends BaseController {
             $this->registry->template->data = $data;
             $this->registry->template->show_attractions = $data;
             $this->registry->template->show("default");
-        /*}*/
+        }
     }
 
     public function choose() {

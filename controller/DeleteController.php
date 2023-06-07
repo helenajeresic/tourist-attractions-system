@@ -7,14 +7,19 @@ require_once __SITE_PATH .  '/controller/SightsController.php';
 
 class deleteController extends BaseController {
     public function index(){
-        $this->registry->template->title = "Delete";
-        $this->registry->template->error = false;
-
-        $ss = new SightService();
-        $data = $ss->getAllSights();
-        $this->registry->template->data = $data;
-
-        $this->registry->template->show("delete");
+        if(isset($_SESSION['admin'])){
+            $this->registry->template->title = "Delete";
+            $this->registry->template->error = false;
+    
+            $ss = new SightService();
+            $data = $ss->getAllSights();
+            $this->registry->template->data = $data;
+    
+            $this->registry->template->show("delete");
+        }
+        else {
+            header('Location: ' . __SITE_URL . 'index.php?rt=sights');
+        }
     }
 
     public function processDelete(){

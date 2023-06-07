@@ -6,9 +6,14 @@ require_once __SITE_PATH .  '/controller/SightsController.php';
 
 class UploadController extends BaseController {
     public function index(){
-        $this->registry->template->title = "Upload";
-        $this->registry->template->error = false;
-        $this->registry->template->show("upload");
+        if(isset($_SESSION['admin'])){
+            $this->registry->template->title = "Upload";
+            $this->registry->template->error = false;
+            $this->registry->template->show("upload");
+        }
+        else {
+            header('Location: ' . __SITE_URL . 'index.php?rt=sights');
+        }
     }
 
     public function processUpload(){

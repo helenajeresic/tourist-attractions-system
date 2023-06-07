@@ -9,7 +9,6 @@ use MongoDB\Operation\ListDatabases;
 use MongoDB\Tests\CommandObserver;
 
 use function sprintf;
-use function version_compare;
 
 class DropDatabaseFunctionalTest extends FunctionalTestCase
 {
@@ -62,10 +61,6 @@ class DropDatabaseFunctionalTest extends FunctionalTestCase
 
     public function testSessionOption(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('Sessions are not supported');
-        }
-
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new DropDatabase(
@@ -83,9 +78,6 @@ class DropDatabaseFunctionalTest extends FunctionalTestCase
 
     /**
      * Asserts that a database with the given name does not exist on the server.
-     *
-     * @param Server $server
-     * @param string $databaseName
      */
     private function assertDatabaseDoesNotExist(Server $server, string $databaseName): void
     {

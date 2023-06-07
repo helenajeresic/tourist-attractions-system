@@ -3,6 +3,7 @@
 namespace MongoDB\Tests\Operation;
 
 use MongoDB\Driver\BulkWrite;
+use MongoDB\Driver\Exception\CommandException;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Exception\UnsupportedException;
@@ -92,12 +93,27 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
         $operation->execute($this->getPrimaryServer());
     }
 
-    public function testSessionOption(): void
+    public function testFindAndModifyReportedWriteConcernError(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('Sessions are not supported');
+        if (($this->isShardedCluster() && ! $this->isShardedClusterUsingReplicasets()) || ! $this->isReplicaSet()) {
+            $this->markTestSkipped('Test only applies to replica sets');
         }
 
+        $this->expectException(CommandException::class);
+        $this->expectExceptionCode(100 /* UnsatisfiableWriteConcern */);
+        $this->expectExceptionMessageMatches('/Write Concern error:/');
+
+        $operation = new FindAndModify(
+            $this->getDatabaseName(),
+            $this->getCollectionName(),
+            ['remove' => true, 'writeConcern' => new WriteConcern(50)]
+        );
+
+        $operation->execute($this->getPrimaryServer());
+    }
+
+    public function testSessionOption(): void
+    {
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new FindAndModify(
@@ -116,10 +132,6 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
     public function testBypassDocumentValidationSetWhenTrue(): void
     {
-        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
-            $this->markTestSkipped('bypassDocumentValidation is not supported');
-        }
-
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new FindAndModify(
@@ -139,10 +151,6 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
     public function testBypassDocumentValidationUnsetWhenFalse(): void
     {
-        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
-            $this->markTestSkipped('bypassDocumentValidation is not supported');
-        }
-
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new FindAndModify(
@@ -211,8 +219,6 @@ class FindAndModifyFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
-     *
-     * @param integer $n
      */
     private function createFixtures(int $n): void
     {

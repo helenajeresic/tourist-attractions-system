@@ -8,14 +8,19 @@ require_once __SITE_PATH .  '/controller/SightsController.php';
 
 class UpdateController extends BaseController {
     public function index(){
-        $this->registry->template->title = "Update";
-        $this->registry->template->error = false;
+        if(isset($_SESSION['admin'])){
+            $this->registry->template->title = "Update";
+            $this->registry->template->error = false;
 
-        $ss = new SightService();
-        $data = $ss->getAllSights();
-        $this->registry->template->data = $data;
+            $ss = new SightService();
+            $data = $ss->getAllSights();
+            $this->registry->template->data = $data;
 
-        $this->registry->template->show("update");
+            $this->registry->template->show("update");
+        }
+        else {
+            header('Location: ' . __SITE_URL . 'index.php?rt=sights');
+        }
     }
 
     public function processUpdate() {

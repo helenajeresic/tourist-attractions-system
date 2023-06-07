@@ -12,7 +12,6 @@ use MongoDB\Model\DatabaseInfoIterator;
 use function call_user_func;
 use function is_callable;
 use function sprintf;
-use function version_compare;
 
 /**
  * Functional tests for the Client class.
@@ -92,9 +91,6 @@ class ClientFunctionalTest extends FunctionalTestCase
      * argument as its first and only parameter. If a DatabaseInfo matching
      * the given name is found, it will be passed to the callback, which may
      * perform additional assertions.
-     *
-     * @param string   $databaseName
-     * @param callable $callback
      */
     private function assertDatabaseExists(string $databaseName, ?callable $callback = null): void
     {
@@ -122,10 +118,6 @@ class ClientFunctionalTest extends FunctionalTestCase
 
     public function testStartSession(): void
     {
-        if (version_compare($this->getFeatureCompatibilityVersion(), '3.6', '<')) {
-            $this->markTestSkipped('startSession() is only supported on FCV 3.6 or higher');
-        }
-
         $this->assertInstanceOf(Session::class, $this->client->startSession());
     }
 }
