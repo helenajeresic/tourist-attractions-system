@@ -15,13 +15,13 @@ class mongoDB{
                 exit('PDO Error : ' . $e->getMessage());
             }
         }
-        return mongoDB::$client;
-    }
+        return mongoDB::$client;    }
 
     public static function getDatabase(){
         if(mongoDB::$database === null && mongoDB::$client !== null){
             try{
-                mongoDB::$database = mongoDB::$client->selectDatabase("projekt");
+                $config = require __SITE_PATH . '/app/config.php';
+                mongoDB::$database = mongoDB::$client->selectDatabase($config['mongoDB']['database']);
             }
             catch (PDOException $e){
                 exit('PDO Error : ' . $e->getMessage());
@@ -29,8 +29,9 @@ class mongoDB{
         }
         else if(mongoDB::$database === null && mongoDB::$client === null){
             try{
+                $config = require __SITE_PATH . '/app/config.php';
                 mongoDB::$client = mongoDB::getClient();
-                mongoDB::$database = mongoDB::$client->selectDatabase("projekt");
+                mongoDB::$database = mongoDB::$client->selectDatabase($config['mongoDB']['database']);
             }
             catch (PDOException $e){
                 exit('PDO Error : ' . $e->getMessage());

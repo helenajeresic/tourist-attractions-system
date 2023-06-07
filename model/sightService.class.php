@@ -51,7 +51,6 @@ class SightService {
 	function getShortestPath($attractionList, $firstSelected) {
 		try {
 			if($attractionList !== [$firstSelected]){
-				//micemo firstSelected iz ukupne liste
 				$attractionList = array_diff($attractionList, [$firstSelected]);
 
 				$neoDatabase = $this->getNeoSession();
@@ -75,11 +74,9 @@ class SightService {
 					LIMIT 1;' , $params);
 					
 					if($results->isEmpty()) {
-						error_log("prazno");
-						sleep(2);
+						error_log("Unable to create shortest path");
 					}
 					else{
-						error_log("dobro je");
 						$firstSelected = $results->first()['next.id'];
 						$attractionList = array_diff($attractionList, [(string)$firstSelected]);
 						$idList[] = $firstSelected;
