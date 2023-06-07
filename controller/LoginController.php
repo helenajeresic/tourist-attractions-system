@@ -1,7 +1,7 @@
 <?php
 
 require "vendor/autoload.php";
-require_once __SITE_PATH .  '/model/UserService.class.php';
+require_once __SITE_PATH .  '/model/userService.class.php';
 
 
 use PHPMailer\PHPMailer\PHPMailer;
