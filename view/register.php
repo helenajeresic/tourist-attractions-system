@@ -13,7 +13,6 @@
     <label for="rpassword">Lozinka</label><br />
     <input type="password" id="rpassword" name="password" placeholder="Vaša lozinka.." required>
     <br />
-    <br />
     <label for="lmail">e-mail</label><br />
     <input type="email" id="lmail" name="email" placeholder="Vaš e-mail.." required>
     <br />
