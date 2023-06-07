@@ -28,5 +28,4 @@
     </form>
 </form>
 
-<?php require_once __SITE_PATH . '/view/_goBack.php';?>
 <?php require_once __SITE_PATH . '/view/_footer.php';?>

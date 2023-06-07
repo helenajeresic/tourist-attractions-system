@@ -52,8 +52,8 @@ class AdminService {
 
     function deleteNeo4j($delete){
         $session = $this->getNeoSession();
-        $query = 'MATCH (a:Attraction {id: $id1}) DETACH DELETE a;';
         $param = ['id1' => new MongoDB\BSON\ObjectId($delete)];
+        $query = 'MATCH (a:Attraction {id: $id1}) DETACH DELETE a;';
         $session->run($query, $param);
     }
 
@@ -95,8 +95,8 @@ class AdminService {
 
         $naziv = $_POST['naziv'];
         $opis = $_POST['opis'];
-        $x_koordinata = $_POST['x-koordinata'];
-        $y_koordinata = $_POST['y-koordinata'];
+        (int)$x_koordinata = $_POST['x-koordinata'];
+        (int)$y_koordinata = $_POST['y-koordinata'];
         $image_path = $_FILES['slika'];
         
 
@@ -107,8 +107,9 @@ class AdminService {
         $result_coord = $collection->findOne($filter);
 
 
-        if ($result_name === null || $result_coord === null) {
+        if ($result_name === null && $result_coord === null) {
             
+            $this->processImageUpload();
             $id = new MongoDB\BSON\ObjectId();
             $document = [
                 '_id' => $id,
@@ -122,17 +123,16 @@ class AdminService {
             $this->addToNeo4j($id, $x_koordinata, $y_koordinata);
         }
         if($result_name !== null){
-            echo "Atrakcija s imenom $naziv već postoji.";
+        
         }
         if($result_coord === null){
-            echo "Atrakcija s kordinatama ($x_koordinata , $y_koordinata)  već postoji.";
         }
     }
 
     function addToNeo4j($addId , $x_koordinata, $y_koordinata){
         $session = $this->getNeoSession();
 
-        $query = 'CREATE (n:Node {id: $addId, x_coordinate: $x_koordinata, y_coordinate: $y_koordinata});';
+        $query = (string)'CREATE (n:Node {id: $addId, x_coordinate: $x_koordinata, y_coordinate: $y_koordinata});';
         $param = ['id1' => $addId, 'x_koordinata' => $x_koordinata, 'y_koordinata' => $y_koordinata ];
         $session->run($query, $param);
 

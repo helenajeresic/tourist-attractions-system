@@ -15,11 +15,12 @@ class Neo4jDB
 
     public static function getConnection()
     {
-        $config = require_once __SITE_PATH . '/app/config.php';
         if (Neo4jDB::$session === null) {
             try {
+                $config = require __SITE_PATH . '/app/config.php';
                 $user_neo4j = $config['neo4j']['username'];
                 $noe4j_password =  $config['neo4j']['password'];
+                error_log("use name je " . $user_neo4j . " a pass je " . $noe4j_password);
                 $auth = Authenticate::basic($user_neo4j, $noe4j_password);
                 $uri =  sprintf("http://{$user_neo4j}:{$noe4j_password}@localhost:7474/", $noe4j_password);
                 $driver = Driver::create($uri, authenticate: $auth);

@@ -13,7 +13,7 @@ class UploadController extends BaseController {
 
     public function processUpload(){
         $as = new AdminService();
-        $as->processImageUpload();
+        // $as->processImageUpload();
         $as->addUploadToDatabases();
 
         header('Location: ' . __SITE_URL . 'index.php?rt=sights');
