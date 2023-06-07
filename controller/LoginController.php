@@ -31,6 +31,7 @@ class loginController extends BaseController{
     function processRegister()
     {
         $name = $_POST['first_name'];
+        $lastname = $_POST['last_name'];
         $email = $_POST['email'];
         $username = $_POST['username'];
         $password = $_POST['password'];
@@ -40,7 +41,7 @@ class loginController extends BaseController{
         if($userService->doesUserExist($email)){
             echo "Account with this email already exists";
         } else {
-            if($userService->registerNewUser($name, $email, $username, $password)){
+            if($userService->registerNewUser($name, $lastname, $email, $username, $password)){
                 echo "Account successfully created. Welcome email has been sent to your registered email.";
                 // Send welcome email
                 if(isset($_POST['submit'])){
@@ -50,38 +51,33 @@ class loginController extends BaseController{
                     if (isset($_POST['mail'])) {
                         $email = filter_var($_POST['email'], FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
                     }
-        
-                    // Check if user exists
-                    if($this->userExists($email)){
-                        $this->registry->template->error = 'Account with this email already exists.';
-                        $this->registry->template->show("login");
-                    } else {
-                        $companiEmail ="";
-                        $companiName ="Moj Turizam";
-                        $subject = "Uspješna registracija Turizam";
-                        $message = "Dragi/draga ".$name." drago nam je što ste se sa svojim mailom: ".$email."  prijavili na našu turisticku aplikaciju";
-                        
-                        $mail = new PHPMailer(true);
-        
-                        $mail->isSMTP();
-                        $mail->SMTPAuth = true;
-        
-                        $mail->Host = "smtp.gmail.com";
-                        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                        $mail->Port = 587;
-                        $mail->Username = "";
-                        $mail -> Password ="";
-                        $mail->CharSet = "UTF-8";
-        
-                        $mail->setFrom($companiEmail, $companiName);
-                        $mail->addAddress($email);
-        
-                        $mail->Subject = $subject;
-                        $mail->Body = $message;
-        
-                        $mail->send();
-                        header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
-                    }
+                    
+                    $companiEmail ="";
+                    $companiName ="Moj Turizam";
+                    $subject = "Uspješna registracija Turizam";
+                    $message = "Dragi/draga ".$name." drago nam je što ste se sa svojim mailom: ".$email."  prijavili na našu turisticku aplikaciju";
+                    
+                    $mail = new PHPMailer(true);
+    
+                    $mail->isSMTP();
+                    $mail->SMTPAuth = true;
+    
+                    $mail->Host = "smtp.gmail.com";
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
+                    $mail->Username = "";
+                    $mail -> Password ="";
+                    $mail->CharSet = "UTF-8";
+    
+                    $mail->setFrom($companiEmail, $companiName);
+                    $mail->addAddress($email);
+    
+                    $mail->Subject = $subject;
+                    $mail->Body = $message;
+    
+                    $mail->send();
+                    header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
+                    
                 }
                 
             } else {
@@ -126,9 +122,6 @@ class loginController extends BaseController{
         //     header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
     }
 
-    function isAdmin($username, $password) {
-
-    }
 }
 
 ?>

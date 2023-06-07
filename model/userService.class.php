@@ -40,26 +40,63 @@ class UserService {
         catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
     }
 
-    function registerNewUser($name, $email, $username, $password){
+    function registerNewUser($name, $lastname, $email, $username, $password){
         try{
             $client = mongoDB::getClient();
             $database = mongoDB::getDatabase();
-
+    
             $collection = $database->users;
-
+    
             // Hash the password for security
             $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+    
             $newUser = [
-                'name' => $name,
-                'email' => $email,
-                'username' => $username,
-                'passwordHash' => $passwordHash,
+                "_id" => new MongoDB\BSON\ObjectId,
+                "username" => $username,
+                "passwordHash" => $passwordHash,
+                "email" => $email,
+                "registrationSequence" => $this->generateRandomString(10),
+                "hasRegistered" => 1,
+                "isAdmin" => 0,
+                "name" => $name,
+                "lastname" => $lastname
             ];
-
+    
             $insertOneResult = $collection->insertOne($newUser);
             return $insertOneResult->getInsertedCount() > 0;
         }
         catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
     }
+    
+
+    function isAdmin($username){
+        try{
+            $client = mongoDB::getClient();
+            $database = mongoDB::getDatabase();
+    
+            $collection = $database->users;
+            $document = $collection->findOne(['username' => $username]);
+            
+            if($document) {
+                // eturn isAdmin value from the document
+                return isset($document->isAdmin) ? $document->isAdmin : false;
+            } else {
+                return false;
+            }
+        }
+        catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
+    }
+
+    function generateRandomString($length = 10)
+    {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+    return $randomString;
+    }
+
 };
 ?>

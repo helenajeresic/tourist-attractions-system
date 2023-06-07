@@ -6,6 +6,8 @@ if (isset($_SESSION['error'])) {
 ?>
 
 
+<?php require_once __SITE_PATH . '/view/_header.php'; ?>
+
 <form method="post" action="<?php echo __SITE_URL . 'index.php?rt=login/processLoginForm' ?>">
         <div class="form-group">
             <label for="username">Username:</label>
@@ -21,17 +23,17 @@ if (isset($_SESSION['error'])) {
             <input class="btn btn-primary" type="submit" name="login" value="Login"/>
         </div>
         <br>
-
+        <br>
         <div class="form-group">
             <h3>First time here?</h3>
-            <!-- reroute to register.php -->
-            <!-- <a class="btn btn-secondary" href="< ?php echo __SITE_URL . 'index.php?rt=register.php' ?>">Register</a> -->
-          
+            <br>
+            <!-- <label for="email">Email adress:</label>
+            <input class="form-control" id="email" name="email" type="email"> -->
         </div>
         <br>
 </form>
-
-<form action="< ?php echo __SITE_URL . 'index.php?rt=login/processRegister' ?>" method="post">		
+             
+<form action="<?php echo __SITE_URL . 'index.php?rt=login/processRegister' ?>" method="post">		
     <label for="fname">Ime</label><br />
     <input type="text" id="fname" name="first_name" placeholder="Vaše ime..">
     <br />
