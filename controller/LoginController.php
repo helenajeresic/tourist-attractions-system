@@ -122,6 +122,11 @@ class loginController extends BaseController{
         //     header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
     }
 
+    function register() {
+        $this->registry->template->title = "Register";
+        $this->registry->template->error = false;
+        $this->registry->template->show("register");
+    }
 }
 
 ?>

@@ -11,47 +11,27 @@ if (isset($_SESSION['error'])) {
 <form method="post" action="<?php echo __SITE_URL . 'index.php?rt=login/processLoginForm' ?>">
         <div class="form-group">
             <label for="username">Username:</label>
-            <input class="form-control" id="username" name="username" type="text">
+            <input class="form-control" id="username" name="username" type="text" required>
         </div>
         <br>
         <div class="form-group">
             <label for="password">Password:</label>
-            <input class="form-control" id="password" name="password" type="password">
+            <input class="form-control" id="password" name="password" type="password" required>
         </div>
         <br>
         <div class="float-end">
             <input class="btn btn-primary" type="submit" name="login" value="Login"/>
         </div>
         <br>
-        <br>
-        <div class="form-group">
-            <h3>First time here?</h3>
+</form>
+
+<div class="form-group">
+            <label>First time here?</label>
+            <form method="post" action="<?php echo __SITE_URL . 'index.php?rt=login/register' ?>">
+            <div class="float-end">
             <br>
-            <!-- <label for="email">Email adress:</label>
-            <input class="form-control" id="email" name="email" type="email"> -->
+            <input class="btn btn-secondary" type="submit" name="register" value="Register"/>
         </div>
-        <br>
-</form>
-             
-<form action="<?php echo __SITE_URL . 'index.php?rt=login/processRegister' ?>" method="post">		
-    <label for="fname">Ime</label><br />
-    <input type="text" id="fname" name="first_name" placeholder="Vaše ime..">
-    <br />
-    <label for="lname">Prezime</label><br />
-    <input type="text" id="lname" name="last_name" placeholder="Vaše prezime..">
-    <br />
-    <label for="rusername">Korisničko ime</label><br />
-    <input type="text" id="rusername" name="username" placeholder="Korisničko ime..">
-    <br />
-    <label for="rpassword">Lozinka</label><br />
-    <input type="password" id="rpassword" name="password" placeholder="Vaša lozinka..">
-    <br />
-    <br />
-    <label for="lmail">e-mail</label><br />
-    <input type="email" id="lmail" name="email" placeholder="Vaš e-mail..">
-    <br />
-    <br />
-    <input type="submit" name="submit" value="Pošalji" />
-</form>
+</div>
 
 <?php require_once __SITE_PATH . '/view/_footer.php'; ?>
