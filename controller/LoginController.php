@@ -97,35 +97,33 @@ class loginController extends BaseController{
         $userService = new UserService();
         
         if ($userService->isUserRegistered($username, $password)) {
+            $_SESSION['user'] = true;
+            if($this->isAdmin($username))
+                $_SESSION['admin'] = true;
             header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
             exit();
         } else {
-            // echo "Incorrect username or password";
             $_SESSION['error'] = "Incorrect username or password, try again";
             header('Location: ' . __SITE_URL . 'index.php?rt=login');
         }
-
-        // if(!$this->isRegistered($username, $password)){
-        //     $this->registry->template->error = 'Incorrect username or password.';
-        //     $this->registry->template->show("login");
-        // } else {
-        //     // if(isAdmin($username)){
-        //     //     $_SESSION["admin"] = true;
-        //     // }
-        //     $_SESSION["user"] = $username;
-        //     header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
-        // }
-
-        // trivijalna logika, samo za probu
-        // if($username === 'Matej' && $password ==='12345'){
-        //     $_SESSION["user"] = $username;
-        //     header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
     }
 
     function register() {
         $this->registry->template->title = "Register";
         $this->registry->template->error = false;
         $this->registry->template->show("register");
+    }
+
+    function isAdmin($username){
+        $userService = new UserService();
+        return $userService->isAdmin($username);
+    }
+
+    function out() {
+        session_unset();
+        session_destroy();
+
+        header('Location: ' . __SITE_URL . 'index.php?rt=login');
     }
 }
 
