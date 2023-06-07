@@ -1,4 +1,14 @@
-<?php require_once __SITE_PATH . '/view/_header.php'; ?>
+<?php require_once __SITE_PATH . '/view/_header.php'; 
+if (isset($_SESSION['registrationFail'])) {
+    echo $_SESSION['registrationFail'];
+    unset($_SESSION['registrationFail']);
+}
+else if (isset($_SESSION['registrationError'])) {
+    echo $_SESSION['registrationError'];
+    unset($_SESSION['registrationError']);
+}
+
+?>
 
 <form action="<?php echo __SITE_URL . 'index.php?rt=login/processRegister' ?>" method="post">		
     <label for="fname">Ime</label><br>

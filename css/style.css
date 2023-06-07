@@ -136,7 +136,10 @@ a{
   display: none;
 }
 
-
-
-
-
+/* Failed login and registration, text color */
+.error {
+  color: red;
+}
+.success {
+  color: green;
+}

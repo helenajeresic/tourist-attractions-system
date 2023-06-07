@@ -1,12 +1,9 @@
 <?php require_once __SITE_PATH . '/view/_header.php';
-if (isset($_SESSION['error'])) {
-    echo $_SESSION['error'];
-    unset($_SESSION['error']);
+if (isset($_SESSION['loginError'])) {
+    echo $_SESSION['loginError'];
+    unset($_SESSION['loginError']);
 }
 ?>
-
-
-<?php require_once __SITE_PATH . '/view/_header.php'; ?>
 
 <form method="post" action="<?php echo __SITE_URL . 'index.php?rt=login/processLoginForm' ?>">
         <div class="form-group">

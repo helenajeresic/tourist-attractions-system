@@ -5,16 +5,22 @@ namespace MongoDB\Tests\SpecTests;
 use Closure;
 use MongoDB\BSON\Binary;
 use MongoDB\BSON\Int64;
+use MongoDB\Client;
 use MongoDB\Collection;
 use MongoDB\Driver\ClientEncryption;
 use MongoDB\Driver\Exception\AuthenticationException;
 use MongoDB\Driver\Exception\BulkWriteException;
+use MongoDB\Driver\Exception\CommandException;
 use MongoDB\Driver\Exception\ConnectionException;
 use MongoDB\Driver\Exception\ConnectionTimeoutException;
 use MongoDB\Driver\Exception\EncryptionException;
 use MongoDB\Driver\Exception\RuntimeException;
+use MongoDB\Driver\Exception\ServerException;
+use MongoDB\Driver\Monitoring\CommandFailedEvent;
+use MongoDB\Driver\Monitoring\CommandStartedEvent;
+use MongoDB\Driver\Monitoring\CommandSubscriber;
+use MongoDB\Driver\Monitoring\CommandSucceededEvent;
 use MongoDB\Driver\WriteConcern;
-use MongoDB\Operation\CreateCollection;
 use MongoDB\Tests\CommandObserver;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\SkippedTestError;
@@ -24,21 +30,32 @@ use UnexpectedValueException;
 
 use function base64_decode;
 use function basename;
+use function count;
+use function explode;
 use function file_get_contents;
 use function getenv;
 use function glob;
 use function in_array;
+use function is_executable;
+use function is_readable;
 use function iterator_to_array;
 use function json_decode;
 use function sprintf;
 use function str_repeat;
 use function strlen;
+use function substr;
 use function unserialize;
+use function version_compare;
+
+use const DIRECTORY_SEPARATOR;
+use const PATH_SEPARATOR;
 
 /**
  * Client-side encryption spec tests.
  *
  * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption
+ * @group csfle
+ * @group serverless
  */
 class ClientSideEncryptionSpecTest extends FunctionalTestCase
 {
@@ -49,6 +66,9 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         'awsTemporary: Insert a document with auto encryption using the AWS provider with temporary credentials' => 'Not yet implemented (PHPC-1751)',
         'awsTemporary: Insert with invalid temporary credentials' => 'Not yet implemented (PHPC-1751)',
         'azureKMS: Insert a document with auto encryption using Azure KMS provider' => 'RHEL platform is missing Azure root certificate (PHPLIB-619)',
+        'explain: Explain a find with deterministic encryption' => 'crypt_shared does not add apiVersion field to explain commands (PHPLIB-947, SERVER-69564)',
+        'timeoutMS: timeoutMS applied to listCollections to get collection schema' => 'Not yet implemented (PHPC-1760)',
+        'timeoutMS: remaining timeoutMS applied to find to get keyvault data' => 'Not yet implemented (PHPC-1760)',
     ];
 
     public function setUp(): void
@@ -56,6 +76,10 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         parent::setUp();
 
         $this->skipIfClientSideEncryptionIsNotSupported();
+
+        if (! static::isCryptSharedLibAvailable() && ! static::isMongocryptdAvailable()) {
+            $this->markTestSkipped('Neither crypt_shared nor mongocryptd are available');
+        }
     }
 
     /**
@@ -67,6 +91,15 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     public static function assertCommandMatches(stdClass $expected, stdClass $actual): void
     {
         static::assertDocumentsMatch($expected, $actual);
+    }
+
+    public static function createTestClient(?string $uri = null, array $options = [], array $driverOptions = []): Client
+    {
+        if (isset($driverOptions['autoEncryption']) && getenv('CRYPT_SHARED_LIB_PATH')) {
+            $driverOptions['autoEncryption']['extraOptions']['cryptSharedLibPath'] = getenv('CRYPT_SHARED_LIB_PATH');
+        }
+
+        return parent::createTestClient($uri, $options, $driverOptions);
     }
 
     /**
@@ -81,7 +114,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
      * @param string      $databaseName   Name of database under test
      * @param string      $collectionName Name of collection under test
      */
-    public function testClientSideEncryption(stdClass $test, ?array $runOn, array $data, ?array $keyVaultData = null, $jsonSchema = null, ?string $databaseName = null, ?string $collectionName = null): void
+    public function testClientSideEncryption(stdClass $test, ?array $runOn, array $data, ?stdClass $encryptedFields = null, ?array $keyVaultData = null, ?stdClass $jsonSchema = null, ?string $databaseName = null, ?string $collectionName = null): void
     {
         if (isset(self::$incompleteTests[$this->dataDescription()])) {
             $this->markTestIncomplete(self::$incompleteTests[$this->dataDescription()]);
@@ -98,6 +131,11 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         $databaseName = $databaseName ?? $this->getDatabaseName();
         $collectionName = $collectionName ?? $this->getCollectionName();
 
+        // TODO: Remove this once SERVER-66901 is implemented (see: PHPLIB-884)
+        if (isset($test->clientOptions->autoEncryptOpts->encryptedFieldsMap)) {
+            $test->clientOptions->autoEncryptOpts->encryptedFieldsMap = $test->clientOptions->autoEncryptOpts->encryptedFieldsMap;
+        }
+
         try {
             $context = Context::fromClientSideEncryption($test, $databaseName, $collectionName);
         } catch (SkippedTestError $e) {
@@ -106,19 +144,19 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
 
         $this->setContext($context);
 
-        $this->insertKeyVaultData($keyVaultData);
-        $this->dropTestAndOutcomeCollections();
-        $this->createTestCollection($jsonSchema);
+        self::insertKeyVaultData($context->getClient(), $keyVaultData);
+        $this->dropTestAndOutcomeCollections(empty($encryptedFields) ? [] : ['encryptedFields' => $encryptedFields]);
+        $this->createTestCollection($encryptedFields, $jsonSchema);
         $this->insertDataFixtures($data);
 
         if (isset($test->failPoint)) {
             $this->configureFailPoint($test->failPoint);
         }
 
-        $context->enableEncryption();
+        $context->useEncryptedClientIfConfigured = true;
 
         if (isset($test->expectations)) {
-            $commandExpectations = CommandExpectations::fromClientSideEncryption($test->expectations);
+            $commandExpectations = CommandExpectations::fromClientSideEncryption($context->getClient(), $test->expectations);
             $commandExpectations->startMonitoring();
         }
 
@@ -131,7 +169,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
             $commandExpectations->assert($this, $context);
         }
 
-        $context->disableEncryption();
+        $context->useEncryptedClientIfConfigured = false;
 
         if (isset($test->outcome->collection->data)) {
             $this->assertOutcomeCollectionData($test->outcome->collection->data, ResultExpectation::ASSERT_DOCUMENTS_MATCH);
@@ -160,6 +198,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
             $runOn = $json->runOn ?? null;
             $data = $json->data ?? [];
             // phpcs:disable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
+            $encryptedFields = $json->encrypted_fields ?? null;
             $keyVaultData = $json->key_vault_data ?? null;
             $jsonSchema = $json->json_schema ?? null;
             $databaseName = $json->database_name ?? null;
@@ -168,7 +207,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
 
             foreach ($json->tests as $test) {
                 $name = $group . ': ' . $test->description;
-                $testArgs[$name] = [$test, $runOn, $data, $keyVaultData, $jsonSchema, $databaseName, $collectionName];
+                $testArgs[$name] = [$test, $runOn, $data, $encryptedFields, $keyVaultData, $jsonSchema, $databaseName, $collectionName];
             }
         }
 
@@ -176,19 +215,18 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: Data key and double encryption
+     * Prose test 2: Data Key and Double Encryption
      *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#data-key-and-double-encryption
      * @dataProvider dataKeyProvider
      */
     public function testDataKeyAndDoubleEncryption(string $providerName, $masterKey): void
     {
-        $this->setContext(Context::fromClientSideEncryption((object) [], 'db', 'coll'));
-        $client = $this->getContext()->getClient();
-
-        // This empty call ensures that the key vault is dropped with a majority
-        // write concern
-        $this->insertKeyVaultData([]);
+        $client = static::createTestClient();
         $client->selectCollection('db', 'coll')->drop();
+
+        // Ensure that the key vault is dropped with a majority write concern
+        self::insertKeyVaultData($client, []);
 
         $encryptionOpts = [
             'keyVaultNamespace' => 'keyvault.datakeys',
@@ -225,9 +263,9 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         $clientEncrypted = static::createTestClient(null, [], ['autoEncryption' => $autoEncryptionOpts]);
         $clientEncryption = $clientEncrypted->createClientEncryption($encryptionOpts);
 
-        $commands = [];
-
         $dataKeyId = null;
+        $insertCommand = null;
+
         $keyAltName = $providerName . '_altname';
 
         (new CommandObserver())->observe(
@@ -239,18 +277,20 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
 
                 $dataKeyId = $clientEncryption->createDataKey($providerName, $keyData);
             },
-            function ($command) use (&$commands): void {
-                $commands[] = $command;
+            function ($command) use (&$insertCommand): void {
+                if ($command['started']->getCommandName() === 'insert') {
+                    $insertCommand = $command['started']->getCommand();
+                }
             }
         );
 
         $this->assertInstanceOf(Binary::class, $dataKeyId);
         $this->assertSame(Binary::TYPE_UUID, $dataKeyId->getType());
 
-        $this->assertCount(2, $commands);
-        $insert = $commands[1]['started'];
-        $this->assertSame('insert', $insert->getCommandName());
-        $this->assertSame(WriteConcern::MAJORITY, $insert->getCommand()->writeConcern->w);
+        $this->assertNotNull($insertCommand);
+        $this->assertObjectHasAttribute('writeConcern', $insertCommand);
+        $this->assertObjectHasAttribute('w', $insertCommand->writeConcern);
+        $this->assertSame(WriteConcern::MAJORITY, $insertCommand->writeConcern->w);
 
         $keys = $client->selectCollection('keyvault', 'datakeys')->find(['_id' => $dataKeyId]);
         $keys = iterator_to_array($keys);
@@ -314,26 +354,20 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: External Key Vault
+     * Prose test 3: External Key Vault
      *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#external-key-vault-test
      * @testWith [false]
      *           [true]
      */
     public function testExternalKeyVault($withExternalKeyVault): void
     {
-        $this->setContext(Context::fromClientSideEncryption((object) [], 'db', 'coll'));
-        $client = $this->getContext()->getClient();
+        $client = static::createTestClient();
         $client->selectCollection('db', 'coll')->drop();
 
-        $keyVaultCollection = $client->selectCollection(
-            'keyvault',
-            'datakeys',
-            ['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)] + $this->getContext()->defaultWriteOptions
-        );
-        $keyVaultCollection->drop();
-        $keyId = $keyVaultCollection
-            ->insertOne($this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/external/external-key.json')))
-            ->getInsertedId();
+        self::insertKeyVaultData($client, [
+            $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/external/external-key.json')),
+        ]);
 
         $encryptionOpts = [
             'keyVaultNamespace' => 'keyvault.datakeys',
@@ -375,7 +409,10 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
             $this->expectException(AuthenticationException::class);
         }
 
-        $clientEncryption->encrypt('test', ['algorithm' => ClientEncryption::AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC, 'keyId' => $keyId]);
+        $clientEncryption->encrypt('test', [
+            'algorithm' => ClientEncryption::AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC,
+            'keyId' => new Binary(base64_decode('LOCALAAAAAAAAAAAAAAAAA=='), Binary::TYPE_UUID),
+        ]);
     }
 
     public static function provideBSONSizeLimitsAndBatchSplittingTests()
@@ -465,19 +502,19 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: BSON size limits and batch splitting
+     * Prose test 4: BSON Size Limits and Batch Splitting
      *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#bson-size-limits-and-batch-splitting
      * @dataProvider provideBSONSizeLimitsAndBatchSplittingTests
      */
     public function testBSONSizeLimitsAndBatchSplitting(Closure $test): void
     {
-        $this->setContext(Context::fromClientSideEncryption((object) [], 'db', 'coll'));
-        $client = $this->getContext()->getClient();
+        $client = static::createTestClient();
 
         $client->selectCollection('db', 'coll')->drop();
         $client->selectDatabase('db')->createCollection('coll', ['validator' => ['$jsonSchema' => $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/limits/limits-schema.json'))]]);
 
-        $this->insertKeyVaultData([
+        self::insertKeyVaultData($client, [
             $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/limits/limits-key.json')),
         ]);
 
@@ -499,7 +536,9 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: Views are prohibited
+     * Prose test 5: Views Are Prohibited
+     *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#views-are-prohibited
      */
     public function testViewsAreProhibited(): void
     {
@@ -529,27 +568,24 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: BSON Corpus
+     * Prose test 6: BSON Corpus
      *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#corpus-test
      * @testWith [true]
      *           [false]
      */
     public function testCorpus($schemaMap = true): void
     {
-        $this->setContext(Context::fromClientSideEncryption((object) [], 'db', 'coll'));
-        $client = $this->getContext()->getClient();
-
+        $client = static::createTestClient();
         $client->selectDatabase('db')->dropCollection('coll');
 
         $schema = $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/corpus/corpus-schema.json'));
 
         if (! $schemaMap) {
-            $client
-                ->selectDatabase('db')
-                ->createCollection('coll', ['validator' => ['$jsonSchema' => $schema]]);
+            $client->selectDatabase('db')->createCollection('coll', ['validator' => ['$jsonSchema' => $schema]]);
         }
 
-        $this->insertKeyVaultData([
+        self::insertKeyVaultData($client, [
             $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/corpus/corpus-key-local.json')),
             $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/corpus/corpus-key-aws.json')),
             $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/corpus/corpus-key-azure.json')),
@@ -641,8 +677,9 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: Custom Endpoint
+     * Prose test 7: Custom Endpoint
      *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#custom-endpoint-test
      * @dataProvider customEndpointProvider
      */
     public function testCustomEndpoint(Closure $test): void
@@ -665,8 +702,8 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         $clientEncryptionInvalid = $client->createClientEncryption([
             'keyVaultNamespace' => 'keyvault.datakeys',
             'kmsProviders' => [
-                'azure' => Context::getAzureCredentials() + ['identityPlatformEndpoint' => 'example.com:443'],
-                'gcp' => Context::getGCPCredentials() + ['endpoint' => 'example.com:443'],
+                'azure' => Context::getAzureCredentials() + ['identityPlatformEndpoint' => 'doesnotexist.invalid:443'],
+                'gcp' => Context::getGCPCredentials() + ['endpoint' => 'doesnotexist.invalid:443'],
                 'kmip' => ['endpoint' => 'doesnotexist.local:5698'],
             ],
             'tlsOptions' => [
@@ -724,7 +761,6 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         yield 'Test 5' => [
             static function (self $test, ClientEncryption $clientEncryption, ClientEncryption $clientEncryptionInvalid) use ($awsMasterKey): void {
                 $test->expectException(RuntimeException::class);
-                $test->expectExceptionMessageMatches('#us-east-1#');
                 $clientEncryption->createDataKey('aws', ['masterKey' => $awsMasterKey + ['endpoint' => 'kms.us-east-2.amazonaws.com']]);
             },
         ];
@@ -732,8 +768,8 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         yield 'Test 6' => [
             static function (self $test, ClientEncryption $clientEncryption, ClientEncryption $clientEncryptionInvalid) use ($awsMasterKey): void {
                 $test->expectException(RuntimeException::class);
-                $test->expectExceptionMessageMatches('#parse error#');
-                $clientEncryption->createDataKey('aws', ['masterKey' => $awsMasterKey + ['endpoint' => 'example.com']]);
+                $test->expectExceptionMessageMatches('#doesnotexist.invalid#');
+                $clientEncryption->createDataKey('aws', ['masterKey' => $awsMasterKey + ['endpoint' => 'doesnotexist.invalid']]);
             },
         ];
 
@@ -744,7 +780,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
                 $test->assertSame('test', $clientEncryption->decrypt($encrypted));
 
                 $test->expectException(RuntimeException::class);
-                $test->expectExceptionMessageMatches('#parse error#');
+                $test->expectExceptionMessageMatches('#doesnotexist.invalid#');
                 $clientEncryptionInvalid->createDataKey('azure', ['masterKey' => $azureMasterKey]);
             },
         ];
@@ -756,7 +792,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
                 $test->assertSame('test', $clientEncryption->decrypt($encrypted));
 
                 $test->expectException(RuntimeException::class);
-                $test->expectExceptionMessageMatches('#parse error#');
+                $test->expectExceptionMessageMatches('#doesnotexist.invalid#');
                 $clientEncryptionInvalid->createDataKey('gcp', ['masterKey' => $gcpMasterKey]);
             },
         ];
@@ -764,7 +800,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         yield 'Test 9' => [
             static function (self $test, ClientEncryption $clientEncryption, ClientEncryption $clientEncryptionInvalid) use ($gcpMasterKey): void {
                 $masterKey = $gcpMasterKey;
-                $masterKey['endpoint'] = 'example.com:443';
+                $masterKey['endpoint'] = 'doesnotexist.invalid:443';
 
                 $test->expectException(RuntimeException::class);
                 $test->expectExceptionMessageMatches('#Invalid KMS response#');
@@ -806,10 +842,20 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: Bypass spawning mongocryptd (via mongocryptdBypassSpawn)
+     * Prose test 8: Bypass Spawning mongocryptd (via mongocryptdBypassSpawn)
+     *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#via-mongocryptdbypassspawn
      */
     public function testBypassSpawningMongocryptdViaBypassSpawn(): void
     {
+        /* If crypt_shared is available it will likely already have been loaded
+         * by a previous test so there is no way to prevent it from being used.
+         * Since CSFLE prefers crypt_shared to mongocryptd there is reason to
+         * run any of the "bypass spawning" tests (see also: MONGOCRYPT-421). */
+        if (static::isCryptSharedLibAvailable()) {
+            $this->markTestSkipped('Bypass spawning of mongocryptd cannot be tested when crypt_shared is available');
+        }
+
         $autoEncryptionOpts = [
             'keyVaultNamespace' => 'keyvault.datakeys',
             'kmsProviders' => [
@@ -825,6 +871,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
             ],
         ];
 
+        // Disable adding cryptSharedLibPath, as it may interfere with this test
         $clientEncrypted = static::createTestClient(null, [], ['autoEncryption' => $autoEncryptionOpts]);
 
         try {
@@ -839,10 +886,16 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Bypass spawning mongocryptd (via bypassAutoEncryption)
+     * Prose test 8: Bypass spawning mongocryptd (via bypassAutoEncryption)
+     *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#via-bypassautoencryption
      */
     public function testBypassSpawningMongocryptdViaBypassAutoEncryption(): void
     {
+        if (static::isCryptSharedLibAvailable()) {
+            $this->markTestSkipped('Bypass spawning of mongocryptd cannot be tested when crypt_shared is available');
+        }
+
         $autoEncryptionOpts = [
             'keyVaultNamespace' => 'keyvault.datakeys',
             'kmsProviders' => [
@@ -854,9 +907,10 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
             ],
         ];
 
+        // Disable adding cryptSharedLibPath, as it may interfere with this test
         $clientEncrypted = static::createTestClient(null, [], ['autoEncryption' => $autoEncryptionOpts]);
 
-        $clientEncrypted->selectCollection('db', 'coll')->insertOne(['encrypted' => 'test']);
+        $clientEncrypted->selectCollection('db', 'coll')->insertOne(['unencrypted' => 'test']);
 
         $clientMongocryptd = static::createTestClient('mongodb://localhost:27021');
 
@@ -865,7 +919,40 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: Invalid KMS Certificate
+     * Prose test 8: Bypass spawning mongocryptd (via bypassQueryAnalysis)
+     *
+     * @see https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#via-bypassqueryanalysis
+     */
+    public function testBypassSpawningMongocryptdViaBypassQueryAnalysis(): void
+    {
+        if (static::isCryptSharedLibAvailable()) {
+            $this->markTestSkipped('Bypass spawning of mongocryptd cannot be tested when crypt_shared is available');
+        }
+
+        $autoEncryptionOpts = [
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => [
+                'local' => ['key' => new Binary(base64_decode(self::LOCAL_MASTERKEY), 0)],
+            ],
+            'bypassQueryAnalysis' => true,
+            'extraOptions' => [
+                'mongocryptdSpawnArgs' => ['--pidfilepath=bypass-spawning-mongocryptd.pid', '--port=27021'],
+            ],
+        ];
+
+        // Disable adding cryptSharedLibPath, as it may interfere with this test
+        $clientEncrypted = static::createTestClient(null, [], ['autoEncryption' => $autoEncryptionOpts]);
+
+        $clientEncrypted->selectCollection('db', 'coll')->insertOne(['unencrypted' => 'test']);
+
+        $clientMongocryptd = static::createTestClient('mongodb://localhost:27021');
+
+        $this->expectException(ConnectionTimeoutException::class);
+        $clientMongocryptd->selectDatabase('db')->command(['ping' => 1]);
+    }
+
+    /**
+     * Prose test 10: KMS TLS Tests (Invalid KMS Certificate)
      *
      * @see https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#invalid-kms-certificate
      */
@@ -893,7 +980,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: Invalid Hostname in KMS Certificate
+     * Prose test 10: KMS TLS Tests (Invalid Hostname in KMS Certificate)
      *
      * @see https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#invalid-hostname-in-kms-certificate
      */
@@ -921,7 +1008,7 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Prose test: KMS TLS Options
+     * Prose test 11: KMS TLS Options
      *
      * @see https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#kms-tls-options-tests
      * @dataProvider provideKmsTlsOptionsTests
@@ -1139,35 +1226,522 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     }
 
     /**
-     * Casts the value for a BSON corpus structure to int64 if necessary.
+     * Prose test 12: Explicit Encryption
      *
-     * This is a workaround for an issue in mongocryptd which refuses to encrypt
-     * int32 values if the schemaMap defines a "long" bsonType for an object.
-     *
-     * @param object $data
-     *
-     * @return Int64|mixed
+     * @see https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#explicit-encryption
+     * @dataProvider provideExplicitEncryptionTests
      */
-    private function craftInt64($data)
+    public function testExplicitEncryption(Closure $test): void
     {
-        if ($data->type !== 'long' || $data->value instanceof Int64) {
-            return $data->value;
+        if ($this->isStandalone() || ($this->isShardedCluster() && ! $this->isShardedClusterUsingReplicasets())) {
+            $this->markTestSkipped('Explicit encryption tests require replica sets');
         }
 
-        $class = Int64::class;
+        if (version_compare($this->getServerVersion(), '6.0.0', '<')) {
+            $this->markTestSkipped('Explicit encryption tests require MongoDB 6.0 or later');
+        }
 
-        $intAsString = sprintf((string) $data->value);
-        $array = sprintf('a:1:{s:7:"integer";s:%d:"%s";}', strlen($intAsString), $intAsString);
-        $int64 = sprintf('C:%d:"%s":%d:{%s}', strlen($class), $class, strlen($array), $array);
+        // Test setup
+        $encryptedFields = $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/etc/data/encryptedFields.json'));
+        $key1Document = $this->decodeJson(file_get_contents(__DIR__ . '/client-side-encryption/etc/data/keys/key1-document.json'));
+        $key1Id = $key1Document->_id;
+
+        $client = static::createTestClient();
+
+        $database = $client->selectDatabase('db');
+        $database->dropCollection('explicit_encryption', ['encryptedFields' => $encryptedFields]);
+        $database->createCollection('explicit_encryption', ['encryptedFields' => $encryptedFields]);
+
+        $database = $client->selectDatabase('keyvault');
+        $database->dropCollection('datakeys');
+        $database->createCollection('datakeys');
+
+        $client->selectCollection('keyvault', 'datakeys')->insertOne($key1Document, ['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)]);
+
+        $keyVaultClient = static::createTestClient();
+
+        $clientEncryption = new ClientEncryption([
+            'keyVaultClient' => $keyVaultClient->getManager(),
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => ['local' => ['key' => new Binary(base64_decode(self::LOCAL_MASTERKEY), 0)]],
+        ]);
+
+        $autoEncryptionOpts = [
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => ['local' => ['key' => new Binary(base64_decode(self::LOCAL_MASTERKEY), 0)]],
+            'bypassQueryAnalysis' => true,
+        ];
+
+        $encryptedClient = static::createTestClient(null, [], ['autoEncryption' => $autoEncryptionOpts]);
+
+        $test($this, $clientEncryption, $encryptedClient, $keyVaultClient, $key1Id);
+    }
+
+    public static function provideExplicitEncryptionTests()
+    {
+        // See: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#case-1-can-insert-encrypted-indexed-and-find
+        yield 'Case 1: can insert encrypted indexed and find' => [
+            static function (self $test, ClientEncryption $clientEncryption, Client $encryptedClient, Client $keyVaultClient, Binary $key1Id): void {
+                $value = 'encrypted indexed value';
+
+                $insertPayload = $clientEncryption->encrypt($value, [
+                    'keyId' => $key1Id,
+                    'algorithm' => ClientEncryption::ALGORITHM_INDEXED,
+                    'contentionFactor' => 0,
+                ]);
+
+                $collection = $encryptedClient->selectCollection('db', 'explicit_encryption');
+                $collection->insertOne(['encryptedIndexed' => $insertPayload]);
+
+                $findPayload = $clientEncryption->encrypt($value, [
+                    'keyId' => $key1Id,
+                    'algorithm' => ClientEncryption::ALGORITHM_INDEXED,
+                    'queryType' => ClientEncryption::QUERY_TYPE_EQUALITY,
+                    'contentionFactor' => 0,
+                ]);
+
+                $results = $collection->find(['encryptedIndexed' => $findPayload])->toArray();
+
+                $test->assertCount(1, $results);
+                $test->assertSame($value, $results[0]['encryptedIndexed']);
+            },
+        ];
+
+        // See: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#case-2-can-insert-encrypted-indexed-and-find-with-non-zero-contention
+        yield 'Case 2: can insert encrypted indexed and find with non-zero contention' => [
+            static function (self $test, ClientEncryption $clientEncryption, Client $encryptedClient, Client $keyVaultClient, Binary $key1Id): void {
+                $value = 'encrypted indexed value';
+
+                $collection = $encryptedClient->selectCollection('db', 'explicit_encryption');
+
+                for ($i = 0; $i < 10; $i++) {
+                    $insertPayload = $clientEncryption->encrypt($value, [
+                        'keyId' => $key1Id,
+                        'algorithm' => ClientEncryption::ALGORITHM_INDEXED,
+                        'contentionFactor' => 10,
+                    ]);
+
+                    $collection->insertOne(['encryptedIndexed' => $insertPayload]);
+                }
+
+                $findPayload = $clientEncryption->encrypt($value, [
+                    'keyId' => $key1Id,
+                    'algorithm' => ClientEncryption::ALGORITHM_INDEXED,
+                    'queryType' => ClientEncryption::QUERY_TYPE_EQUALITY,
+                    'contentionFactor' => 0,
+                ]);
+
+                $results = $collection->find(['encryptedIndexed' => $findPayload])->toArray();
+
+                $test->assertLessThan(10, count($results));
+
+                foreach ($results as $result) {
+                    $test->assertSame($value, $result['encryptedIndexed']);
+                }
+
+                $findPayload2 = $clientEncryption->encrypt($value, [
+                    'keyId' => $key1Id,
+                    'algorithm' => ClientEncryption::ALGORITHM_INDEXED,
+                    'queryType' => ClientEncryption::QUERY_TYPE_EQUALITY,
+                    'contentionFactor' => 10,
+                ]);
+
+                $results = $collection->find(['encryptedIndexed' => $findPayload2])->toArray();
+
+                $test->assertCount(10, $results);
+
+                foreach ($results as $result) {
+                    $test->assertSame($value, $result['encryptedIndexed']);
+                }
+            },
+        ];
+
+        // See: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#case-3-can-insert-encrypted-unindexed
+        yield 'Case 3: can insert encrypted unindexed' => [
+            static function (self $test, ClientEncryption $clientEncryption, Client $encryptedClient, Client $keyVaultClient, Binary $key1Id): void {
+                $value = 'encrypted unindexed value';
+
+                $insertPayload = $clientEncryption->encrypt($value, [
+                    'keyId' => $key1Id,
+                    'algorithm' => ClientEncryption::ALGORITHM_UNINDEXED,
+                ]);
+
+                $collection = $encryptedClient->selectCollection('db', 'explicit_encryption');
+                $collection->insertOne(['_id' => 1, 'encryptedUnindexed' => $insertPayload]);
+
+                $results = $collection->find(['_id' => 1])->toArray();
+
+                $test->assertCount(1, $results);
+                $test->assertSame($value, $results[0]['encryptedUnindexed']);
+            },
+        ];
+
+        // See: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#case-4-can-roundtrip-encrypted-indexed
+        yield 'Case 4: can roundtrip encrypted indexed' => [
+            static function (self $test, ClientEncryption $clientEncryption, Client $encryptedClient, Client $keyVaultClient, Binary $key1Id): void {
+                $value = 'encrypted indexed value';
+
+                $payload = $clientEncryption->encrypt($value, [
+                    'keyId' => $key1Id,
+                    'algorithm' => ClientEncryption::ALGORITHM_INDEXED,
+                    'contentionFactor' => 0,
+                ]);
+
+                $test->assertSame($value, $clientEncryption->decrypt($payload));
+            },
+        ];
+
+        // See: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#case-5-can-roundtrip-encrypted-unindexed
+        yield 'Case 5: can roundtrip encrypted unindexed' => [
+            static function (self $test, ClientEncryption $clientEncryption, Client $encryptedClient, Client $keyVaultClient, Binary $key1Id): void {
+                $value = 'encrypted unindexed value';
+
+                $payload = $clientEncryption->encrypt($value, [
+                    'keyId' => $key1Id,
+                    'algorithm' => ClientEncryption::ALGORITHM_UNINDEXED,
+                ]);
+
+                $test->assertSame($value, $clientEncryption->decrypt($payload));
+            },
+        ];
+    }
+
+    /**
+     * Prose test 13: Unique Index on keyAltNames
+     *
+     * @see https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#unique-index-on-keyaltnames
+     * @dataProvider provideUniqueIndexOnKeyAltNamesTests
+     */
+    public function testUniqueIndexOnKeyAltNames(Closure $test): void
+    {
+        // Test setup
+        $client = static::createTestClient();
+
+        // Ensure that the key vault is dropped with a majority write concern
+        self::insertKeyVaultData($client, []);
+
+        $client->selectCollection('keyvault', 'datakeys')->createIndex(
+            ['keyAltNames' => 1],
+            [
+                'unique' => true,
+                'partialFilterExpression' => ['keyAltNames' => ['$exists' => true]],
+                'writeConcern' => new WriteConcern(WriteConcern::MAJORITY),
+            ]
+        );
+
+        $clientEncryption = new ClientEncryption([
+            'keyVaultClient' => $client->getManager(),
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => ['local' => ['key' => new Binary(base64_decode(self::LOCAL_MASTERKEY), 0)]],
+        ]);
+
+        $clientEncryption->createDataKey('local', ['keyAltNames' => ['def']]);
+
+        $test($this, $client, $clientEncryption);
+    }
+
+    public static function provideUniqueIndexOnKeyAltNamesTests()
+    {
+        // See: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#case-1-createdatakey
+        yield 'Case 1: createDataKey()' => [
+            static function (self $test, Client $client, ClientEncryption $clientEncryption): void {
+                $clientEncryption->createDataKey('local', ['keyAltNames' => ['abc']]);
+
+                try {
+                    $clientEncryption->createDataKey('local', ['keyAltNames' => ['abc']]);
+                    $test->fail('Expected exception to be thrown');
+                } catch (ServerException $e) {
+                    $test->assertSame(11000 /* DuplicateKey */, $e->getCode());
+                }
+
+                try {
+                    $clientEncryption->createDataKey('local', ['keyAltNames' => ['def']]);
+                    $test->fail('Expected exception to be thrown');
+                } catch (ServerException $e) {
+                    $test->assertSame(11000 /* DuplicateKey */, $e->getCode());
+                }
+            },
+        ];
+
+        // See: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#case-2-addkeyaltname
+        yield 'Case 2: addKeyAltName()' => [
+            static function (self $test, Client $client, ClientEncryption $clientEncryption): void {
+                $keyId = $clientEncryption->createDataKey('local');
+
+                $keyBeforeUpdate = $clientEncryption->addKeyAltName($keyId, 'abc');
+                $test->assertObjectNotHasAttribute('keyAltNames', $keyBeforeUpdate);
+
+                $keyBeforeUpdate = $clientEncryption->addKeyAltName($keyId, 'abc');
+                $test->assertObjectHasAttribute('keyAltNames', $keyBeforeUpdate);
+                $test->assertIsArray($keyBeforeUpdate->keyAltNames);
+                $test->assertContains('abc', $keyBeforeUpdate->keyAltNames);
+
+                try {
+                    $clientEncryption->addKeyAltName($keyId, 'def');
+                    $test->fail('Expected exception to be thrown');
+                } catch (ServerException $e) {
+                    $test->assertSame(11000 /* DuplicateKey */, $e->getCode());
+                }
+
+                $originalKeyId = $clientEncryption->getKeyByAltName('def')->_id;
+
+                $originalKeyBeforeUpdate = $clientEncryption->addKeyAltName($originalKeyId, 'def');
+                $test->assertObjectHasAttribute('keyAltNames', $originalKeyBeforeUpdate);
+                $test->assertIsArray($originalKeyBeforeUpdate->keyAltNames);
+                $test->assertContains('def', $originalKeyBeforeUpdate->keyAltNames);
+            },
+        ];
+    }
+
+    /**
+     * Prose test 14: Decryption Events
+     *
+     * @see https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#decryption-events
+     * @dataProvider provideDecryptionEventsTests
+     */
+    public function testDecryptionEvents(Closure $test): void
+    {
+        // Test setup
+        $setupClient = static::createTestClient();
+        $setupClient->selectCollection('db', 'decryption_events')->drop();
+
+        // Ensure that the key vault is dropped with a majority write concern
+        self::insertKeyVaultData($setupClient, []);
+
+        $clientEncryption = new ClientEncryption([
+            'keyVaultClient' => $setupClient->getManager(),
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => ['local' => ['key' => new Binary(base64_decode(self::LOCAL_MASTERKEY), 0)]],
+        ]);
+
+        $keyId = $clientEncryption->createDataKey('local');
+
+        $cipherText = $clientEncryption->encrypt('hello', [
+            'keyId' => $keyId,
+            'algorithm' => ClientEncryption::AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC,
+        ]);
+
+        // Flip the last byte in the encrypted string
+        $malformedCipherText = new Binary(substr($cipherText->getData(), 0, -1) . ~$cipherText->getData()[-1], Binary::TYPE_ENCRYPTED);
+
+        $autoEncryptionOpts = [
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => ['local' => ['key' => new Binary(base64_decode(self::LOCAL_MASTERKEY), 0)]],
+        ];
+
+        $encryptedClient = static::createTestClient(null, ['retryReads' => false], ['autoEncryption' => $autoEncryptionOpts]);
+
+        $subscriber = new class implements CommandSubscriber {
+            public $lastAggregateReply;
+            public $lastAggregateError;
+
+            public function commandStarted(CommandStartedEvent $event): void
+            {
+            }
+
+            public function commandSucceeded(CommandSucceededEvent $event): void
+            {
+                if ($event->getCommandName() === 'aggregate') {
+                    $this->lastAggregateReply = $event->getReply();
+                }
+            }
+
+            public function commandFailed(CommandFailedEvent $event): void
+            {
+                if ($event->getCommandName() === 'aggregate') {
+                    $this->lastAggregateError = $event->getError();
+                }
+            }
+        };
+
+        $encryptedClient->getManager()->addSubscriber($subscriber);
+
+        $test($this, $setupClient, $clientEncryption, $encryptedClient, $subscriber, $cipherText, $malformedCipherText);
+
+        $encryptedClient->getManager()->removeSubscriber($subscriber);
+    }
+
+    public static function provideDecryptionEventsTests()
+    {
+        // See: https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#case-1-command-error
+        yield 'Case 1: Command Error' => [
+            static function (self $test, Client $setupClient, ClientEncryption $clientEncryption, Client $encryptedClient, CommandSubscriber $subscriber, Binary $cipherText, Binary $malformedCipherText): void {
+                $setupClient->selectDatabase('admin')->command([
+                    'configureFailPoint' => 'failCommand',
+                    'mode' => ['times' => 1],
+                    'data' => [
+                        'errorCode' => 123,
+                        'failCommands' => ['aggregate'],
+                    ],
+                ]);
+
+                try {
+                    $encryptedClient->selectCollection('db', 'decryption_events')->aggregate([]);
+                    $test->fail('Expected exception to be thrown');
+                } catch (CommandException $e) {
+                    $test->assertSame(123, $e->getCode());
+                }
+
+                $test->assertNotNull($subscriber->lastAggregateError);
+            },
+        ];
+
+        // See: https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#case-2-network-error
+        yield 'Case 2: Network Error' => [
+            static function (self $test, Client $setupClient, ClientEncryption $clientEncryption, Client $encryptedClient, CommandSubscriber $subscriber, Binary $cipherText, Binary $malformedCipherText): void {
+                $setupClient->selectDatabase('admin')->command([
+                    'configureFailPoint' => 'failCommand',
+                    'mode' => ['times' => 1],
+                    'data' => [
+                        'closeConnection' => true,
+                        'failCommands' => ['aggregate'],
+                    ],
+                ]);
+
+                try {
+                    $encryptedClient->selectCollection('db', 'decryption_events')->aggregate([]);
+                    $test->fail('Expected exception to be thrown');
+                } catch (ConnectionTimeoutException $e) {
+                    $test->addToAssertionCount(1);
+                }
+
+                $test->assertNotNull($subscriber->lastAggregateError);
+            },
+        ];
+
+        // See: https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#case-3-decrypt-error
+        yield 'Case 3: Decrypt Error' => [
+            static function (self $test, Client $setupClient, ClientEncryption $clientEncryption, Client $encryptedClient, CommandSubscriber $subscriber, Binary $cipherText, Binary $malformedCipherText): void {
+                $collection = $encryptedClient->selectCollection('db', 'decryption_events');
+
+                $collection->insertOne(['encrypted' => $malformedCipherText]);
+
+                try {
+                    $collection->aggregate([]);
+                    $test->fail('Expected exception to be thrown');
+                } catch (EncryptionException $e) {
+                    $test->assertStringContainsString('HMAC validation failure', $e->getMessage());
+                }
+
+                $test->assertNotNull($subscriber->lastAggregateReply);
+                $test->assertEquals($malformedCipherText, $subscriber->lastAggregateReply->cursor->firstBatch[0]->encrypted ?? null);
+            },
+        ];
+
+        // See: https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#case-4-decrypt-success
+        yield 'Case 4: Decrypt Success' => [
+            static function (self $test, Client $setupClient, ClientEncryption $clientEncryption, Client $encryptedClient, CommandSubscriber $subscriber, Binary $cipherText, Binary $malformedCipherText): void {
+                $collection = $encryptedClient->selectCollection('db', 'decryption_events');
+
+                $collection->insertOne(['encrypted' => $cipherText]);
+                $collection->aggregate([]);
+
+                $test->assertNotNull($subscriber->lastAggregateReply);
+                $test->assertEquals($cipherText, $subscriber->lastAggregateReply->cursor->firstBatch[0]->encrypted ?? null);
+            },
+        ];
+    }
+
+    /**
+     * Prose test 16: RewrapManyDataKey
+     *
+     * @see https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/tests/README.rst#rewrap
+     * @dataProvider provideRewrapManyDataKeySrcAndDstProviders
+     */
+    public function testRewrapManyDataKey(string $srcProvider, string $dstProvider): void
+    {
+        $providerMasterKeys = [
+            'aws' => ['region' => 'us-east-1', 'key' => 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0'],
+            'azure' => ['keyVaultEndpoint' => 'key-vault-csfle.vault.azure.net', 'keyName' => 'key-name-csfle'],
+            'gcp' => ['projectId' => 'devprod-drivers', 'location' => 'global', 'keyRing' => 'key-ring-csfle', 'keyName' => 'key-name-csfle'],
+            'kmip' => [],
+        ];
+
+        // Test setup
+        $client = static::createTestClient();
+
+        // Ensure that the key vault is dropped with a majority write concern
+        self::insertKeyVaultData($client, []);
+
+        $clientEncryptionOpts = [
+            'keyVaultNamespace' => 'keyvault.datakeys',
+            'kmsProviders' => [
+                'aws' => Context::getAWSCredentials(),
+                'azure' => Context::getAzureCredentials(),
+                'gcp' => Context::getGCPCredentials(),
+                'kmip' => ['endpoint' => Context::getKmipEndpoint()],
+                'local' => ['key' => new Binary(base64_decode(self::LOCAL_MASTERKEY), 0)],
+            ],
+            'tlsOptions' => [
+                'kmip' => Context::getKmsTlsOptions(),
+            ],
+        ];
+
+        $clientEncryption1 = $client->createClientEncryption($clientEncryptionOpts);
+
+        $createDataKeyOpts = [];
+
+        if (isset($providerMasterKeys[$srcProvider])) {
+            $createDataKeyOpts['masterKey'] = $providerMasterKeys[$srcProvider];
+        }
+
+        $keyId = $clientEncryption1->createDataKey($srcProvider, $createDataKeyOpts);
+
+        $ciphertext = $clientEncryption1->encrypt('test', ['algorithm' => ClientEncryption::AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC, 'keyId' => $keyId]);
+
+        $clientEncryption2 = $client->createClientEncryption($clientEncryptionOpts);
+
+        $rewrapManyDataKeyOpts = ['provider' => $dstProvider];
+
+        if (isset($providerMasterKeys[$dstProvider])) {
+            $rewrapManyDataKeyOpts['masterKey'] = $providerMasterKeys[$dstProvider];
+        }
+
+        $result = $clientEncryption2->rewrapManyDataKey([], $rewrapManyDataKeyOpts);
+
+        $this->assertObjectHasAttribute('bulkWriteResult', $result);
+        $this->assertIsObject($result->bulkWriteResult);
+        // libmongoc uses different field names for its BulkWriteResult
+        $this->assertObjectHasAttribute('nModified', $result->bulkWriteResult);
+        $this->assertSame(1, $result->bulkWriteResult->nModified);
+
+        $this->assertSame('test', $clientEncryption1->decrypt($ciphertext));
+        $this->assertSame('test', $clientEncryption2->decrypt($ciphertext));
+    }
+
+    public static function provideRewrapManyDataKeySrcAndDstProviders()
+    {
+        $providers = ['aws', 'azure', 'gcp', 'kmip', 'local'];
+
+        foreach ($providers as $srcProvider) {
+            foreach ($providers as $dstProvider) {
+                yield [$srcProvider, $dstProvider];
+            }
+        }
+    }
+
+    private function createInt64(string $value): Int64
+    {
+        $array = sprintf('a:1:{s:7:"integer";s:%d:"%s";}', strlen($value), $value);
+        $int64 = sprintf('C:%d:"%s":%d:{%s}', strlen(Int64::class), Int64::class, strlen($array), $array);
 
         return unserialize($int64);
     }
 
-    private function createTestCollection($jsonSchema): void
+    private function createTestCollection(?stdClass $encryptedFields = null, ?stdClass $jsonSchema = null): void
     {
-        $options = empty($jsonSchema) ? [] : ['validator' => ['$jsonSchema' => $jsonSchema]];
-        $operation = new CreateCollection($this->getContext()->databaseName, $this->getContext()->collectionName, $options);
-        $operation->execute($this->getPrimaryServer());
+        $context = $this->getContext();
+        $options = $context->defaultWriteOptions;
+
+        if (! empty($encryptedFields)) {
+            $options['encryptedFields'] = $encryptedFields;
+        }
+
+        if (! empty($jsonSchema)) {
+            $options['validator'] = ['$jsonSchema' => $jsonSchema];
+        }
+
+        $context->getDatabase()->createCollection($context->collectionName, $options);
     }
 
     private function encryptCorpusValue(string $fieldName, stdClass $data, ClientEncryption $clientEncryption)
@@ -1217,7 +1791,13 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
 
         if ($data->allowed) {
             try {
-                $encrypted = $clientEncryption->encrypt($this->craftInt64($data), $encryptionOptions);
+                /* Note: workaround issue where mongocryptd refuses to encrypt
+                 * 32-bit integers if schemaMap defines a "long" BSON type. */
+                $value = $data->type === 'long' && ! $data->value instanceof Int64
+                    ? $this->createInt64($data->value)
+                    : $data->value;
+
+                $encrypted = $clientEncryption->encrypt($value, $encryptionOptions);
             } catch (EncryptionException $e) {
                 $this->fail('Could not encrypt value for field ' . $fieldName . ': ' . $e->getMessage());
             }
@@ -1247,10 +1827,9 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         return $value;
     }
 
-    private function insertKeyVaultData(?array $keyVaultData = null): void
+    private static function insertKeyVaultData(Client $client, ?array $keyVaultData = null): void
     {
-        $context = $this->getContext();
-        $collection = $context->selectCollection('keyvault', 'datakeys', ['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)] + $context->defaultWriteOptions);
+        $collection = $client->selectCollection('keyvault', 'datakeys', ['writeConcern' => new WriteConcern(WriteConcern::MAJORITY)]);
         $collection->drop();
 
         if (empty($keyVaultData)) {
@@ -1263,7 +1842,11 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
     private function prepareCorpusData(string $fieldName, stdClass $data, ClientEncryption $clientEncryption)
     {
         if ($data->method === 'auto') {
-            $data->value = $this->craftInt64($data);
+            /* Note: workaround issue where mongocryptd refuses to encrypt
+             * 32-bit integers if schemaMap defines a "long" BSON type. */
+            if ($data->type === 'long' && ! $data->value instanceof Int64) {
+                $data->value = $this->createInt64($data->value);
+            }
 
             return $data;
         }
@@ -1272,5 +1855,29 @@ class ClientSideEncryptionSpecTest extends FunctionalTestCase
         $returnData->value = $this->encryptCorpusValue($fieldName, $data, $clientEncryption);
 
         return $data->allowed ? $returnData : $data;
+    }
+
+    private static function isCryptSharedLibAvailable(): bool
+    {
+        $cryptSharedLibPath = getenv('CRYPT_SHARED_LIB_PATH');
+
+        if ($cryptSharedLibPath === false) {
+            return false;
+        }
+
+        return is_readable($cryptSharedLibPath);
+    }
+
+    private static function isMongocryptdAvailable(): bool
+    {
+        $paths = explode(PATH_SEPARATOR, getenv("PATH"));
+
+        foreach ($paths as $path) {
+            if (is_executable($path . DIRECTORY_SEPARATOR . 'mongocryptd')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

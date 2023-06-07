@@ -12,7 +12,6 @@ use MongoDB\Tests\CommandObserver;
 use function call_user_func;
 use function is_callable;
 use function sprintf;
-use function version_compare;
 
 class DropIndexesFunctionalTest extends FunctionalTestCase
 {
@@ -123,10 +122,6 @@ class DropIndexesFunctionalTest extends FunctionalTestCase
 
     public function testSessionOption(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('Sessions are not supported');
-        }
-
         $operation = new CreateIndexes($this->getDatabaseName(), $this->getCollectionName(), [['key' => ['x' => 1]]]);
         $operation->execute($this->getPrimaryServer());
 
@@ -154,8 +149,6 @@ class DropIndexesFunctionalTest extends FunctionalTestCase
      * argument as its first and only parameter. If an IndexInfo matching the
      * given name is found, it will be passed to the callback, which may perform
      * additional assertions.
-     *
-     * @param callable $callback
      */
     private function assertIndexExists($indexName, ?callable $callback = null): void
     {

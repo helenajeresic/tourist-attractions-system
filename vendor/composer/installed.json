@@ -59,17 +59,17 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.271.9",
-            "version_normalized": "3.271.9.0",
+            "version": "3.271.10",
+            "version_normalized": "3.271.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "8593b1a898f2d0be56bea94aa9b379e670ae1eb3"
+                "reference": "f8b191d1ab23dfdd1131017a6bfc58198fcd9393"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/8593b1a898f2d0be56bea94aa9b379e670ae1eb3",
-                "reference": "8593b1a898f2d0be56bea94aa9b379e670ae1eb3",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/f8b191d1ab23dfdd1131017a6bfc58198fcd9393",
+                "reference": "f8b191d1ab23dfdd1131017a6bfc58198fcd9393",
                 "shasum": ""
             },
             "require": {
@@ -110,7 +110,7 @@
                 "ext-openssl": "Allows working with CloudFront private distributions and verifying received SNS messages",
                 "ext-sockets": "To use client-side monitoring"
             },
-            "time": "2023-06-06T18:22:57+00:00",
+            "time": "2023-06-07T18:21:43+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -151,7 +151,7 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.271.9"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.271.10"
             },
             "install-path": "../aws/aws-sdk-php"
         },
@@ -978,23 +978,23 @@
         },
         {
             "name": "mongodb/mongodb",
-            "version": "1.11.0",
-            "version_normalized": "1.11.0.0",
+            "version": "1.15.0",
+            "version_normalized": "1.15.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mongodb/mongo-php-library.git",
-                "reference": "e4aa59ab15b6fe00a0e56b6772f8b515a0f01bf0"
+                "reference": "3a681a3b2f2c0ebac227a3b86bb9057d0e6eb8f8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mongodb/mongo-php-library/zipball/e4aa59ab15b6fe00a0e56b6772f8b515a0f01bf0",
-                "reference": "e4aa59ab15b6fe00a0e56b6772f8b515a0f01bf0",
+                "url": "https://api.github.com/repos/mongodb/mongo-php-library/zipball/3a681a3b2f2c0ebac227a3b86bb9057d0e6eb8f8",
+                "reference": "3a681a3b2f2c0ebac227a3b86bb9057d0e6eb8f8",
                 "shasum": ""
             },
             "require": {
                 "ext-hash": "*",
                 "ext-json": "*",
-                "ext-mongodb": "^1.12.0",
+                "ext-mongodb": "^1.15.0",
                 "jean85/pretty-package-versions": "^1.2 || ^2.0.1",
                 "php": "^7.2 || ^8.0",
                 "symfony/polyfill-php80": "^1.19"
@@ -1002,13 +1002,14 @@
             "require-dev": {
                 "doctrine/coding-standard": "^9.0",
                 "squizlabs/php_codesniffer": "^3.6",
-                "symfony/phpunit-bridge": "^5.2"
+                "symfony/phpunit-bridge": "^5.2",
+                "vimeo/psalm": "^4.28"
             },
-            "time": "2021-12-14T23:38:18+00:00",
+            "time": "2022-11-23T04:45:35+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.11.x-dev"
+                    "dev-master": "1.15.x-dev"
                 }
             },
             "installation-source": "dist",
@@ -1044,7 +1045,7 @@
             ],
             "support": {
                 "issues": "https://github.com/mongodb/mongo-php-library/issues",
-                "source": "https://github.com/mongodb/mongo-php-library/tree/1.11.0"
+                "source": "https://github.com/mongodb/mongo-php-library/tree/1.15.0"
             },
             "install-path": "../mongodb/mongodb"
         },

@@ -26,7 +26,7 @@ class RetryableReadsSpecTest extends FunctionalTestCase
     ];
 
     /** @var array */
-    private static $incompleteTests = ['mapReduce: MapReduce succeeds with retry on' => 'PHPLIB-715'];
+    private static $incompleteTests = [];
 
     /**
      * Assert that the expected and actual command documents match.
@@ -92,7 +92,7 @@ class RetryableReadsSpecTest extends FunctionalTestCase
         }
 
         if (isset($test->expectations)) {
-            $commandExpectations = CommandExpectations::fromRetryableReads($test->expectations);
+            $commandExpectations = CommandExpectations::fromRetryableReads($context->getClient(), $test->expectations);
             $commandExpectations->startMonitoring();
         }
 

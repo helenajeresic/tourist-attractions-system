@@ -15,7 +15,7 @@ class UserService {
             $database = mongoDB::getDatabase();
 
             $collection = $database->users;
-            $document = $collection->findOne(['username' => $username]);
+            $document = $collection->findOne(['username' => ['$eq' => $username]]);
             
             if($document) {
                 // Compare hashed passwords
@@ -33,7 +33,7 @@ class UserService {
             $database = mongoDB::getDatabase();
 
             $collection = $database->users;
-            $document = $collection->findOne(['email' => $email]);
+            $document = $collection->findOne(['email' => ['$eq' => $email]]);
             
             return $document != null;
         }
@@ -78,13 +78,27 @@ class UserService {
             $document = $collection->findOne(['username' => $username]);
             
             if($document) {
-                // eturn isAdmin value from the document
+                // return isAdmin value from the document
                 return isset($document->isAdmin) ? $document->isAdmin : false;
             } else {
                 return false;
             }
         }
         catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
+    }
+
+    public function doesUsernameExist($username) {
+        try {
+            $client = mongoDB::getClient();
+            $database = mongoDB::getDatabase();
+
+            $collection = $database->users;
+            $document = $collection->findOne(['username' => ['$eq' => $username]]);
+
+            return $document != null;
+        } catch (PDOException $e) {
+            exit('PDO error ' . $e->getMessage());
+        }
     }
 
     function generateRandomString($length = 10)
