@@ -1,4 +1,5 @@
 <?php require_once __SITE_PATH . '/view/_header.php';
+require_once __SITE_PATH . '/view/welcomeLogin.php';
 
 if (isset($_SESSION['loginError'])) {
     echo $_SESSION['loginError'];
