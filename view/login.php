@@ -25,6 +25,7 @@ if (isset($_SESSION['error'])) {
         <br>
 </form>
 
+<br>
 <div class="form-group">
             <form method="post" action="<?php echo __SITE_URL . 'index.php?rt=login/register' ?>">
             <div class="float">

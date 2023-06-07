@@ -88,7 +88,7 @@ class AdminService {
     }
 
     //upload
-    function addUploadToDatabases(){
+    function addUploadToDatabases() : bool {
         require_once __SITE_PATH . '/vendor/autoload.php';
         require_once __SITE_PATH . '/app/database/mongodb.class.php';
         $collection = $this->getMongoAttractions();
@@ -121,11 +121,10 @@ class AdminService {
             ];
             $collection->insertOne($document);
             $this->addToNeo4j($id, $x_koordinata, $y_koordinata);
+            return true;
         }
-        if($result_name !== null){
-        
-        }
-        if($result_coord === null){
+        else {
+            return false;
         }
     }
 

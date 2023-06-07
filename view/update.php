@@ -1,4 +1,5 @@
-<?php require_once __SITE_PATH . '/view/_header.php';?>
+<?php require_once __SITE_PATH . '/view/_header.php';
+?>
     <form action="<?php echo __SITE_URL . 'index.php?rt=update/processUpdate'?>" method="post" enctype="multipart/form-data">
         <h3>Odaberi atrakciju kojoj želiš promijeniti podatke:</h3>
         <select name="lang"  class="form-control">

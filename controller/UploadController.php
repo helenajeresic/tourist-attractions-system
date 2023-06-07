@@ -18,10 +18,17 @@ class UploadController extends BaseController {
 
     public function processUpload(){
         $as = new AdminService();
-        // $as->processImageUpload();
-        $as->addUploadToDatabases();
+        
+        $res = $as->addUploadToDatabases();
 
-        header('Location: ' . __SITE_URL . 'index.php?rt=sights');
+        if($res === false){
+            $_SESSION['error'] = "Pokušali ste unijeti atrakciju s imenom ili koordinatama koje već postoje. \n
+            Unesite drugu atrakciju ili pređite na drugu radnju.";
+            header('Location: ' . __SITE_URL . 'index.php?rt=upload');
+        }
+        else {
+            header('Location: ' . __SITE_URL . 'index.php?rt=sights');
+        }
     }
 }
 
