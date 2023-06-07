@@ -52,6 +52,7 @@ class loginController extends BaseController{
                         $email = filter_var($_POST['email'], FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
                     }
                     
+                    try {
                     $companiEmail ="";
                     $companiName ="Moj Turizam";
                     $subject = "Uspješna registracija Turizam";
@@ -77,11 +78,17 @@ class loginController extends BaseController{
     
                     $mail->send();
                     header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
+                    }
+                    catch (Exception $e) {
+                        error_log('Email wasnt send successfully ' . $e->getMessage());
+                        header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
+                    }
                     
                 }
                 
             } else {
                 echo "There was a problem creating your account.";
+                header('Location: ' . __SITE_URL . 'index.php?rt=login/register');
             }
         }
     }
