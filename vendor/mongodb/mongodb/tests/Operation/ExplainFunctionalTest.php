@@ -97,6 +97,10 @@ class ExplainFunctionalTest extends FunctionalTestCase
      */
     public function testDistinct($verbosity, $executionStatsExpected, $allPlansExecutionExpected): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('Explaining distinct command requires server version >= 3.2');
+        }
+
         $operation = new Distinct($this->getDatabaseName(), $this->getCollectionName(), 'x', []);
 
         $explainOperation = new Explain($this->getDatabaseName(), $operation, ['verbosity' => $verbosity, 'typeMap' => ['root' => 'array', 'document' => 'array']]);
@@ -110,6 +114,10 @@ class ExplainFunctionalTest extends FunctionalTestCase
      */
     public function testFindAndModify($verbosity, $executionStatsExpected, $allPlansExecutionExpected): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('Explaining findAndModify command requires server version >= 3.2');
+        }
+
         $operation = new FindAndModify($this->getDatabaseName(), $this->getCollectionName(), ['remove' => true]);
 
         $explainOperation = new Explain($this->getDatabaseName(), $operation, ['verbosity' => $verbosity, 'typeMap' => ['root' => 'array', 'document' => 'array']]);
@@ -135,6 +143,10 @@ class ExplainFunctionalTest extends FunctionalTestCase
 
     public function testFindMaxAwait(): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('maxAwaitTimeMS option is not supported');
+        }
+
         $maxAwaitTimeMS = 100;
 
         /* Calculate an approximate pivot to use for time assertions. We will
@@ -216,6 +228,10 @@ class ExplainFunctionalTest extends FunctionalTestCase
      */
     public function testFindOneAndDelete($verbosity, $executionStatsExpected, $allPlansExecutionExpected): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('Explaining findOneAndDelete command requires server version >= 3.2');
+        }
+
         $operation = new FindOneAndDelete($this->getDatabaseName(), $this->getCollectionName(), []);
 
         $explainOperation = new Explain($this->getDatabaseName(), $operation, ['verbosity' => $verbosity, 'typeMap' => ['root' => 'array', 'document' => 'array']]);
@@ -229,6 +245,10 @@ class ExplainFunctionalTest extends FunctionalTestCase
      */
     public function testFindOneAndReplace($verbosity, $executionStatsExpected, $allPlansExecutionExpected): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('Explaining findOneAndReplace command requires server version >= 3.2');
+        }
+
         $operation = new FindOneAndReplace($this->getDatabaseName(), $this->getCollectionName(), ['x' => 1.1], ['x' => 5]);
 
         $explainOperation = new Explain($this->getDatabaseName(), $operation, ['verbosity' => $verbosity, 'typeMap' => ['root' => 'array', 'document' => 'array']]);
@@ -242,6 +262,10 @@ class ExplainFunctionalTest extends FunctionalTestCase
      */
     public function testFindOneAndUpdate($verbosity, $executionStatsExpected, $allPlansExecutionExpected): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('Explaining findOneAndUpdate command requires server version >= 3.2');
+        }
+
         $operation = new FindOneAndUpdate($this->getDatabaseName(), $this->getCollectionName(), [], ['$rename' => ['x' => 'y']]);
 
         $explainOperation = new Explain($this->getDatabaseName(), $operation, ['verbosity' => $verbosity, 'typeMap' => ['root' => 'array', 'document' => 'array']]);
@@ -270,6 +294,10 @@ class ExplainFunctionalTest extends FunctionalTestCase
 
     public function testUpdateBypassDocumentValidationSetWhenTrue(): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('bypassDocumentValidation is not supported');
+        }
+
         $this->createFixtures(3);
 
         (new CommandObserver())->observe(
@@ -297,6 +325,10 @@ class ExplainFunctionalTest extends FunctionalTestCase
 
     public function testUpdateBypassDocumentValidationUnsetWhenFalse(): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('bypassDocumentValidation is not supported');
+        }
+
         $this->createFixtures(3);
 
         (new CommandObserver())->observe(
@@ -425,6 +457,8 @@ class ExplainFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
+     *
+     * @param integer $n
      */
     private function createFixtures(int $n): void
     {

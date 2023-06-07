@@ -9,6 +9,8 @@ use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListCollections;
 use MongoDB\Tests\CommandObserver;
 
+use function version_compare;
+
 class ListCollectionsFunctionalTest extends FunctionalTestCase
 {
     public function testListCollectionsForNewlyCreatedDatabase(): void
@@ -43,6 +45,10 @@ class ListCollectionsFunctionalTest extends FunctionalTestCase
      */
     public function testIdIndexAndInfo(): void
     {
+        if (version_compare($this->getServerVersion(), '3.4.0', '<')) {
+            $this->markTestSkipped('idIndex and info are not supported');
+        }
+
         $server = $this->getPrimaryServer();
 
         $insertOne = new InsertOne($this->getDatabaseName(), $this->getCollectionName(), ['x' => 1]);
@@ -74,26 +80,12 @@ class ListCollectionsFunctionalTest extends FunctionalTestCase
         $this->assertCount(0, $collections);
     }
 
-    public function testAuthorizedCollectionsOption(): void
-    {
-        (new CommandObserver())->observe(
-            function (): void {
-                $operation = new ListCollections(
-                    $this->getDatabaseName(),
-                    ['authorizedCollections' => true]
-                );
-
-                $operation->execute($this->getPrimaryServer());
-            },
-            function (array $event): void {
-                $this->assertObjectHasAttribute('authorizedCollections', $event['started']->getCommand());
-                $this->assertSame(true, $event['started']->getCommand()->authorizedCollections);
-            }
-        );
-    }
-
     public function testSessionOption(): void
     {
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('Sessions are not supported');
+        }
+
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new ListCollections(

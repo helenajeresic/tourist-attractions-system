@@ -15,7 +15,6 @@ use MongoDB\Exception\UnsupportedException;
 use MongoDB\MapReduceResult;
 use MongoDB\Operation\Count;
 use MongoDB\Tests\CommandObserver;
-use TypeError;
 
 use function array_filter;
 use function call_user_func;
@@ -33,9 +32,9 @@ class CollectionFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideInvalidDatabaseAndCollectionNames
      */
-    public function testConstructorDatabaseNameArgument($databaseName, string $expectedExceptionClass): void
+    public function testConstructorDatabaseNameArgument($databaseName): void
     {
-        $this->expectException($expectedExceptionClass);
+        $this->expectException(InvalidArgumentException::class);
         // TODO: Move to unit test once ManagerInterface can be mocked (PHPC-378)
         new Collection($this->manager, $databaseName, $this->getCollectionName());
     }
@@ -43,9 +42,9 @@ class CollectionFunctionalTest extends FunctionalTestCase
     /**
      * @dataProvider provideInvalidDatabaseAndCollectionNames
      */
-    public function testConstructorCollectionNameArgument($collectionName, string $expectedExceptionClass): void
+    public function testConstructorCollectionNameArgument($collectionName): void
     {
-        $this->expectException($expectedExceptionClass);
+        $this->expectException(InvalidArgumentException::class);
         // TODO: Move to unit test once ManagerInterface can be mocked (PHPC-378)
         new Collection($this->manager, $this->getDatabaseName(), $collectionName);
     }
@@ -53,8 +52,8 @@ class CollectionFunctionalTest extends FunctionalTestCase
     public function provideInvalidDatabaseAndCollectionNames()
     {
         return [
-            [null, TypeError::class],
-            ['', InvalidArgumentException::class],
+            [null],
+            [''],
         ];
     }
 
@@ -148,6 +147,10 @@ class CollectionFunctionalTest extends FunctionalTestCase
 
     public function testCreateIndexSplitsCommandOptions(): void
     {
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('Sessions are not supported');
+        }
+
         (new CommandObserver())->observe(
             function (): void {
                 $this->collection->createIndex(
@@ -355,7 +358,7 @@ class CollectionFunctionalTest extends FunctionalTestCase
         /* When renaming an unsharded collection, mongos requires the source
         * and target database to both exist on the primary shard. In practice,
         * this means we need to create the target database explicitly.
-        * See: https://mongodb.com/docs/manual/reference/command/renameCollection/#unsharded-collections
+        * See: https://docs.mongodb.com/manual/reference/command/renameCollection/#unsharded-collections
         */
         if ($this->isShardedCluster()) {
             $toDatabase->foo->insertOne(['_id' => 1]);
@@ -806,6 +809,9 @@ class CollectionFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
+     *
+     * @param integer $n
+     * @param array   $executeBulkWriteOptions
      */
     private function createFixtures(int $n, array $executeBulkWriteOptions = []): void
     {

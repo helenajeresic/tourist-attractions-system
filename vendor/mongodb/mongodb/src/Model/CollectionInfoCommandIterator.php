@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@
 namespace MongoDB\Model;
 
 use IteratorIterator;
+use ReturnTypeWillChange;
 use Traversable;
 
 /**
@@ -29,14 +30,17 @@ use Traversable;
  * @internal
  * @see \MongoDB\Database::listCollections()
  * @see https://github.com/mongodb/specifications/blob/master/source/enumerate-collections.rst
- * @see https://mongodb.com/docs/manual/reference/command/listCollections/
+ * @see http://docs.mongodb.org/manual/reference/command/listCollections/
  */
 class CollectionInfoCommandIterator extends IteratorIterator implements CollectionInfoIterator
 {
     /** @var string|null */
     private $databaseName;
 
-    public function __construct(Traversable $iterator, ?string $databaseName = null)
+    /**
+     * @param string|null $databaseName
+     */
+    public function __construct(Traversable $iterator, $databaseName = null)
     {
         parent::__construct($iterator);
 
@@ -47,9 +51,11 @@ class CollectionInfoCommandIterator extends IteratorIterator implements Collecti
      * Return the current element as a CollectionInfo instance.
      *
      * @see CollectionInfoIterator::current()
-     * @see https://php.net/iterator.current
+     * @see http://php.net/iterator.current
+     * @return CollectionInfo
      */
-    public function current(): CollectionInfo
+    #[ReturnTypeWillChange]
+    public function current()
     {
         $info = parent::current();
 

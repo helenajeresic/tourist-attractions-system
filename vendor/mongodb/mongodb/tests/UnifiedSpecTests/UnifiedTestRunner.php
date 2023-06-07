@@ -19,36 +19,23 @@ use UnexpectedValueException;
 
 use function call_user_func;
 use function count;
-use function explode;
 use function filter_var;
 use function gc_collect_cycles;
 use function getenv;
-use function implode;
 use function in_array;
-use function is_executable;
-use function is_readable;
 use function is_string;
-use function parse_url;
 use function PHPUnit\Framework\assertContainsOnly;
 use function PHPUnit\Framework\assertInstanceOf;
 use function PHPUnit\Framework\assertIsArray;
 use function PHPUnit\Framework\assertIsString;
 use function PHPUnit\Framework\assertNotEmpty;
-use function PHPUnit\Framework\assertNotFalse;
-use function PHPUnit\Framework\assertStringContainsString;
-use function PHPUnit\Framework\assertStringStartsWith;
 use function preg_match;
 use function preg_replace;
 use function sprintf;
-use function strlen;
 use function strpos;
-use function substr_replace;
 use function version_compare;
 
-use const DIRECTORY_SEPARATOR;
 use const FILTER_VALIDATE_BOOLEAN;
-use const PATH_SEPARATOR;
-use const PHP_URL_HOST;
 
 /**
  * Unified test runner.
@@ -63,10 +50,7 @@ final class UnifiedTestRunner
     public const SERVER_ERROR_UNAUTHORIZED = 13;
 
     public const MIN_SCHEMA_VERSION = '1.0';
-
-    /* Note: This is necessary to support expectedError.errorResponse from 1.12;
-     * however, syntax from 1.9, 1.10, and 1.11 has not been implemented. */
-    public const MAX_SCHEMA_VERSION = '1.12';
+    public const MAX_SCHEMA_VERSION = '1.5';
 
     /** @var MongoDB\Client */
     private $internalClient;
@@ -86,9 +70,6 @@ final class UnifiedTestRunner
     /** @var FailPointObserver */
     private $failPointObserver;
 
-    /** @var ServerParameterHelper */
-    private $serverParameterHelper;
-
     public function __construct(string $internalClientUri)
     {
         $this->internalClient = FunctionalTestCase::createTestClient($internalClientUri);
@@ -100,8 +81,6 @@ final class UnifiedTestRunner
         if ($this->isServerless() || strpos($internalClientUri, self::ATLAS_TLD) !== false) {
             $this->allowKillAllSessions = false;
         }
-
-        $this->serverParameterHelper = new ServerParameterHelper($this->internalClient);
     }
 
     public function run(UnifiedTestCase $test): void
@@ -125,7 +104,7 @@ final class UnifiedTestRunner
              * succeeding or failing. Since the callable itself might throw, we
              * need to ensure doTearDown() will still be called. */
             try {
-                if (isset($this->entityMapObserver, $this->entityMap)) {
+                if (isset($this->entityMapObserver)) {
                     call_user_func($this->entityMapObserver, $this->entityMap);
                 }
             } finally {
@@ -199,7 +178,8 @@ final class UnifiedTestRunner
             $this->prepareInitialData($initialData);
         }
 
-        $context = $this->createContext();
+        // Give Context unmodified URI so it can enforce useMultipleMongoses
+        $context = new Context($this->internalClient, $this->internalClientUri);
 
         /* If an EntityMap observer has been configured, assign the Context's
          * EntityMap to a class property so it can later be accessed from run(),
@@ -255,10 +235,9 @@ final class UnifiedTestRunner
             $cachedIsSatisfiedArgs = [
                 $this->getServerVersion(),
                 $this->getTopology(),
-                $this->serverParameterHelper,
+                $this->getServerParameters(),
                 $this->isAuthenticated(),
                 $this->isServerless(),
-                $this->isClientSideEncryptionSupported(),
             ];
         }
 
@@ -271,7 +250,7 @@ final class UnifiedTestRunner
 
         // @todo Add server parameter requirements?
         Assert::markTestSkipped(sprintf(
-            'Server (version=%s, topology=%s, auth=%s) does not meet test requirements',
+            'Server (version=%s, toplogy=%s, auth=%s) does not meet test requirements',
             $cachedIsSatisfiedArgs[0],
             $cachedIsSatisfiedArgs[1],
             $cachedIsSatisfiedArgs[3] ? 'yes' : 'no'
@@ -283,6 +262,24 @@ final class UnifiedTestRunner
         $manager = $this->internalClient->getManager();
 
         return $manager->selectServer(new ReadPreference(ReadPreference::PRIMARY));
+    }
+
+    private function getServerParameters(): stdClass
+    {
+        $database = $this->internalClient->selectDatabase('admin');
+        $cursor = $database->command(
+            ['getParameter' => '*'],
+            [
+                'readPreference' => new ReadPreference(ReadPreference::PRIMARY),
+                'typeMap' => [
+                    'root' => 'object',
+                    'document' => 'object',
+                    'array' => 'array',
+                ],
+            ]
+        );
+
+        return $cursor->toArray()[0];
     }
 
     private function getServerVersion(): string
@@ -320,7 +317,7 @@ final class UnifiedTestRunner
                 return RunOnRequirement::TOPOLOGY_LOAD_BALANCED;
 
             default:
-                throw new UnexpectedValueException('Topology is neither single nor RS nor sharded');
+                throw new UnexpectedValueException('Toplogy is neither single nor RS nor sharded');
         }
     }
 
@@ -341,48 +338,6 @@ final class UnifiedTestRunner
         }
 
         throw new UnexpectedValueException('Could not determine authentication status');
-    }
-
-    /**
-     * Return whether client-side encryption is supported.
-     */
-    private function isClientSideEncryptionSupported(): bool
-    {
-        /* CSFLE technically requires FCV 4.2+ but this is sufficient since we
-         * do not test on mixed-version clusters. */
-        if (version_compare($this->getServerVersion(), '4.2', '<')) {
-            return false;
-        }
-
-        if (FunctionalTestCase::getModuleInfo('libmongocrypt') === 'disabled') {
-            return false;
-        }
-
-        return static::isCryptSharedLibAvailable() || static::isMongocryptdAvailable();
-    }
-
-    private static function isCryptSharedLibAvailable(): bool
-    {
-        $cryptSharedLibPath = getenv('CRYPT_SHARED_LIB_PATH');
-
-        if ($cryptSharedLibPath === false) {
-            return false;
-        }
-
-        return is_readable($cryptSharedLibPath);
-    }
-
-    private static function isMongocryptdAvailable(): bool
-    {
-        $paths = explode(PATH_SEPARATOR, getenv("PATH"));
-
-        foreach ($paths as $path) {
-            if (is_executable($path . DIRECTORY_SEPARATOR . 'mongocryptd')) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -487,7 +442,7 @@ final class UnifiedTestRunner
     /**
      * Work around potential error executing distinct on sharded clusters.
      *
-     * @see https://github.com/mongodb/specifications/blob/master/source/unified-test-format/unified-test-format.rst#staledbversion-errors-on-sharded-clusters
+     * @see https://github.com/mongodb/specifications/blob/master/source/transactions/tests/README.rst#why-do-tests-that-run-distinct-sometimes-fail-with-staledbversion
      */
     private function preventStaleDbVersionError(array $operations, Context $context): void
     {
@@ -521,72 +476,5 @@ final class UnifiedTestRunner
                 return;
             }
         }
-    }
-
-    private function createContext(): Context
-    {
-        $context = new Context($this->internalClient, $this->internalClientUri);
-
-        if ($this->getPrimaryServer()->getType() === Server::TYPE_MONGOS) {
-            // We assume the internal client URI has multiple mongos hosts
-            $multiMongosUri = $this->internalClientUri;
-
-            /* TODO: If an SRV URI is provided, we can consider connecting and
-             * checking the topology for multiple mongoses and then selecting a
-             * single mongos to reconstruct a single mongos URI; however, that
-             * may omit necessary URI options provided by TXT records. */
-            assertStringStartsWith('mongodb://', $multiMongosUri);
-            assertStringContainsString(',', parse_url($multiMongosUri, PHP_URL_HOST));
-
-            $singleMongosUri = self::removeMultipleHosts($multiMongosUri);
-
-            $context->setUrisForUseMultipleMongoses($singleMongosUri, $multiMongosUri);
-        }
-
-        /* TODO: Enable this logic once PHPLIB-794 is implemented. For now, load
-         * balancer tests will continue to use MONGODB_URI. */
-        if (false && $this->getPrimaryServer()->getType() === Server::TYPE_LOAD_BALANCER && ! $this->isServerless()) {
-            $singleMongosUri = getenv('MONGODB_SINGLE_MONGOS_LB_URI');
-            $multiMongosUri = getenv('MONGODB_MULTI_MONGOS_LB_URI');
-
-            assertNotFalse($singleMongosUri);
-            assertNotFalse($multiMongosUri);
-
-            $context->setUrisForUseMultipleMongoses($singleMongosUri, $multiMongosUri);
-        }
-
-        return $context;
-    }
-
-    /**
-     * Removes any hosts beyond the first in a URI. This function should only be
-     * used with a sharded cluster URI, but that is not enforced.
-     */
-    private static function removeMultipleHosts(string $uri): string
-    {
-        $parts = parse_url($uri);
-
-        assertIsArray($parts);
-
-        $hosts = explode(',', $parts['host']);
-
-        // Nothing to do if the URI already has a single mongos host
-        if (count($hosts) === 1) {
-            return $uri;
-        }
-
-        // Re-append port to last host
-        if (isset($parts['port'])) {
-            $hosts[count($hosts) - 1] .= ':' . $parts['port'];
-        }
-
-        $singleHost = $hosts[0];
-        $multipleHosts = implode(',', $hosts);
-
-        $pos = strpos($uri, $multipleHosts);
-
-        assertNotFalse($pos);
-
-        return substr_replace($uri, $singleHost, $pos, strlen($multipleHosts));
     }
 }

@@ -4,20 +4,22 @@ namespace MongoDB\Tests\UnifiedSpecTests;
 
 use LogicException;
 use MongoDB\Client;
-use MongoDB\Driver\ClientEncryption;
+use MongoDB\Driver\ReadPreference;
+use MongoDB\Driver\Server;
 use MongoDB\Driver\ServerApi;
 use MongoDB\Model\BSONArray;
 use MongoDB\Tests\FunctionalTestCase;
-use MongoDB\Tests\SpecTests\ClientSideEncryptionSpecTest;
-use PHPUnit\Framework\Assert;
 use stdClass;
 
 use function array_key_exists;
 use function array_map;
+use function count;
 use function current;
 use function explode;
-use function getenv;
+use function implode;
+use function in_array;
 use function key;
+use function parse_url;
 use function PHPUnit\Framework\assertArrayHasKey;
 use function PHPUnit\Framework\assertCount;
 use function PHPUnit\Framework\assertIsArray;
@@ -26,9 +28,16 @@ use function PHPUnit\Framework\assertIsInt;
 use function PHPUnit\Framework\assertIsObject;
 use function PHPUnit\Framework\assertIsString;
 use function PHPUnit\Framework\assertNotEmpty;
+use function PHPUnit\Framework\assertNotFalse;
 use function PHPUnit\Framework\assertNotSame;
 use function PHPUnit\Framework\assertSame;
-use function sprintf;
+use function PHPUnit\Framework\assertStringContainsString;
+use function PHPUnit\Framework\assertStringStartsWith;
+use function strlen;
+use function strpos;
+use function substr_replace;
+
+use const PHP_URL_HOST;
 
 /**
  * Execution context for spec tests.
@@ -40,6 +49,9 @@ final class Context
 {
     /** @var string */
     private $activeClient;
+
+    /** @var string[] */
+    private $dirtySessions = [];
 
     /** @var EntityMap */
     private $entityMap;
@@ -59,38 +71,17 @@ final class Context
     /** @var string */
     private $uri;
 
-    /** @var string */
-    private $singleMongosUri;
-
-    /** @var string */
-    private $multiMongosUri;
-
     public function __construct(Client $internalClient, string $uri)
     {
         $this->entityMap = new EntityMap();
         $this->internalClient = $internalClient;
         $this->uri = $uri;
-
-        /* TODO: Consider leaving these unset, although that might require
-         * redundant topology/serverless checks in Context::createClient(). */
-        $this->singleMongosUri = $uri;
-        $this->multiMongosUri = $uri;
-    }
-
-    /**
-     * Set single and multi-mongos URIs for useMultipleMongoses. This should be
-     * called for sharded cluster and non-serverless load balanced topologies.
-     *
-     * @see UnifiedTestRunner::createContext()
-     */
-    public function setUrisForUseMultipleMongoses(string $singleMongosUri, string $multiMongosUri): void
-    {
-        $this->singleMongosUri = $singleMongosUri;
-        $this->multiMongosUri = $multiMongosUri;
     }
 
     /**
      * Create entities for "createEntities".
+     *
+     * @param array $createEntities
      */
     public function createEntities(array $entities): void
     {
@@ -109,10 +100,6 @@ final class Context
             switch ($type) {
                 case 'client':
                     $this->createClient($id, $def);
-                    break;
-
-                case 'clientEncryption':
-                    $this->createClientEncryption($id, $def);
                     break;
 
                 case 'database':
@@ -147,6 +134,20 @@ final class Context
         return $this->internalClient;
     }
 
+    public function isDirtySession(string $sessionId): bool
+    {
+        return in_array($sessionId, $this->dirtySessions);
+    }
+
+    public function markDirtySession(string $sessionId): void
+    {
+        if ($this->isDirtySession($sessionId)) {
+            return;
+        }
+
+        $this->dirtySessions[] = $sessionId;
+    }
+
     public function isActiveClient(string $clientId): bool
     {
         return $this->activeClient === $clientId;
@@ -173,12 +174,11 @@ final class Context
 
         foreach ($expectedEventsForClients as $expectedEventsForClient) {
             assertIsObject($expectedEventsForClient);
-            Util::assertHasOnlyKeys($expectedEventsForClient, ['client', 'events', 'eventType', 'ignoreExtraEvents']);
+            Util::assertHasOnlyKeys($expectedEventsForClient, ['client', 'events', 'eventType']);
 
             $client = $expectedEventsForClient->client ?? null;
             $eventType = $expectedEventsForClient->eventType ?? 'command';
             $expectedEvents = $expectedEventsForClient->events ?? null;
-            $ignoreExtraEvents = $expectedEventsForClient->ignoreExtraEvents ?? false;
 
             assertIsString($client);
             assertArrayHasKey($client, $this->eventObserversByClient);
@@ -187,7 +187,7 @@ final class Context
             assertSame('command', $eventType);
             assertIsArray($expectedEvents);
 
-            $this->eventObserversByClient[$client]->assert($expectedEvents, $ignoreExtraEvents);
+            $this->eventObserversByClient[$client]->assert($expectedEvents);
         }
     }
 
@@ -271,7 +271,11 @@ final class Context
         if (isset($useMultipleMongoses)) {
             assertIsBool($useMultipleMongoses);
 
-            $uri = $useMultipleMongoses ? $this->multiMongosUri : $this->singleMongosUri;
+            if ($useMultipleMongoses) {
+                self::requireMultipleMongoses($uri);
+            } else {
+                $uri = self::removeMultipleMongoses($uri);
+            }
         }
 
         $uriOptions = [];
@@ -308,8 +312,10 @@ final class Context
             }
         }
 
-        // Transaction tests expect a new client for each test so that txnNumber values are deterministic.
-        $driverOptions = isset($observeEvents) ? ['disableClientPersistence' => true] : [];
+        /* TODO: Remove this once PHPC-1645 is implemented. Each client needs
+         * its own libmongoc client to facilitate txnNumber assertions. */
+        static $i = 0;
+        $driverOptions = isset($observeEvents) ? ['i' => $i++] : [];
 
         if ($serverApi !== null) {
             assertIsObject($serverApi);
@@ -321,79 +327,6 @@ final class Context
         }
 
         $this->entityMap->set($id, FunctionalTestCase::createTestClient($uri, $uriOptions, $driverOptions));
-    }
-
-    private function createClientEncryption(string $id, stdClass $o): void
-    {
-        Util::assertHasOnlyKeys($o, [
-            'id',
-            'clientEncryptionOpts',
-        ]);
-
-        $clientEncryptionOpts = [];
-        $clientId = null;
-
-        if (isset($o->clientEncryptionOpts)) {
-            assertIsObject($o->clientEncryptionOpts);
-            $clientEncryptionOpts = (array) $o->clientEncryptionOpts;
-        }
-
-        if (isset($clientEncryptionOpts['keyVaultClient'])) {
-            assertIsString($clientEncryptionOpts['keyVaultClient']);
-            /* Record the keyVaultClient's ID, which we'll later use to track
-             * the parent client in the entity map. */
-            $clientId = $clientEncryptionOpts['keyVaultClient'];
-            $clientEncryptionOpts['keyVaultClient'] = $this->entityMap->getClient($clientId)->getManager();
-        }
-
-        if (isset($clientEncryptionOpts['kmsProviders'])) {
-            assertIsObject($clientEncryptionOpts['kmsProviders']);
-
-            if (isset($clientEncryptionOpts['kmsProviders']->aws->accessKeyId->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->aws->accessKeyId = static::getEnv('AWS_ACCESS_KEY_ID');
-            }
-
-            if (isset($clientEncryptionOpts['kmsProviders']->aws->secretAccessKey->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->aws->secretAccessKey = static::getEnv('AWS_SECRET_ACCESS_KEY');
-            }
-
-            if (isset($clientEncryptionOpts['kmsProviders']->azure->clientId->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->azure->clientId = static::getEnv('AZURE_CLIENT_ID');
-            }
-
-            if (isset($clientEncryptionOpts['kmsProviders']->azure->clientSecret->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->azure->clientSecret = static::getEnv('AZURE_CLIENT_SECRET');
-            }
-
-            if (isset($clientEncryptionOpts['kmsProviders']->azure->tenantId->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->azure->tenantId = static::getEnv('AZURE_TENANT_ID');
-            }
-
-            if (isset($clientEncryptionOpts['kmsProviders']->gcp->email->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->gcp->email = static::getEnv('GCP_EMAIL');
-            }
-
-            if (isset($clientEncryptionOpts['kmsProviders']->gcp->privateKey->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->gcp->privateKey = static::getEnv('GCP_PRIVATE_KEY');
-            }
-
-            if (isset($clientEncryptionOpts['kmsProviders']->kmip->endpoint->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->kmip->endpoint = static::getEnv('KMIP_ENDPOINT');
-            }
-
-            if (isset($clientEncryptionOpts['kmsProviders']->local->key->{'$$placeholder'})) {
-                $clientEncryptionOpts['kmsProviders']->local->key = ClientSideEncryptionSpecTest::LOCAL_MASTERKEY;
-            }
-        }
-
-        if (isset($clientEncryptionOpts['kmsProviders']->kmip->endpoint)) {
-            $clientEncryptionOpts['tlsOptions']['kmip'] = [
-                'tlsCAFile' => static::getEnv('KMS_TLS_CA_FILE'),
-                'tlsCertificateKeyFile' => static::getEnv('KMS_TLS_CERTIFICATE_KEY_FILE'),
-            ];
-        }
-
-        $this->entityMap->set($id, new ClientEncryption($clientEncryptionOpts), $clientId);
     }
 
     private function createEntityCollector(string $clientId, stdClass $o): void
@@ -491,17 +424,6 @@ final class Context
         $this->entityMap->set($id, $database->selectGridFSBucket($options), $databaseId);
     }
 
-    private static function getEnv(string $name): string
-    {
-        $value = getenv($name);
-
-        if ($value === false) {
-            Assert::markTestSkipped(sprintf('Environment variable "%s" is not defined', $name));
-        }
-
-        return $value;
-    }
-
     private static function prepareCollectionOrDatabaseOptions(array $options): array
     {
         Util::assertHasOnlyKeys($options, ['readConcern', 'readPreference', 'writeConcern']);
@@ -557,5 +479,63 @@ final class Context
         }
 
         return Util::prepareCommonOptions($options);
+    }
+
+    /**
+     * Removes mongos hosts beyond the first if the URI refers to a sharded
+     * cluster. Otherwise, the URI is returned as-is.
+     */
+    private static function removeMultipleMongoses(string $uri): string
+    {
+        assertStringStartsWith('mongodb://', $uri);
+
+        $manager = FunctionalTestCase::createTestManager($uri);
+
+        // Nothing to do if the URI does not refer to a sharded cluster
+        if ($manager->selectServer(new ReadPreference(ReadPreference::PRIMARY))->getType() !== Server::TYPE_MONGOS) {
+            return $uri;
+        }
+
+        $parts = parse_url($uri);
+
+        assertIsArray($parts);
+
+        $hosts = explode(',', $parts['host']);
+
+        // Nothing to do if the URI already has a single mongos host
+        if (count($hosts) === 1) {
+            return $uri;
+        }
+
+        // Re-append port to last host
+        if (isset($parts['port'])) {
+            $hosts[count($hosts) - 1] .= ':' . $parts['port'];
+        }
+
+        $singleHost = $hosts[0];
+        $multipleHosts = implode(',', $hosts);
+
+        $pos = strpos($uri, $multipleHosts);
+
+        assertNotFalse($pos);
+
+        return substr_replace($uri, $singleHost, $pos, strlen($multipleHosts));
+    }
+
+    /**
+     * Requires multiple mongos hosts if the URI refers to a sharded cluster.
+     */
+    private static function requireMultipleMongoses(string $uri): void
+    {
+        assertStringStartsWith('mongodb://', $uri);
+
+        $manager = FunctionalTestCase::createTestManager($uri);
+
+        // Nothing to do if the URI does not refer to a sharded cluster
+        if ($manager->selectServer(new ReadPreference(ReadPreference::PRIMARY))->getType() !== Server::TYPE_MONGOS) {
+            return;
+        }
+
+        assertStringContainsString(',', parse_url($uri, PHP_URL_HOST));
     }
 }

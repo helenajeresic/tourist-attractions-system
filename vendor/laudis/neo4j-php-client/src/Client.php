@@ -17,6 +17,7 @@ use Laudis\Neo4j\Common\DriverSetupManager;
 use Laudis\Neo4j\Contracts\ClientInterface;
 use Laudis\Neo4j\Contracts\DriverInterface;
 use Laudis\Neo4j\Contracts\SessionInterface;
+use Laudis\Neo4j\Contracts\TransactionInterface;
 use Laudis\Neo4j\Contracts\UnmanagedTransactionInterface;
 use Laudis\Neo4j\Databags\SessionConfiguration;
 use Laudis\Neo4j\Databags\Statement;
@@ -33,6 +34,16 @@ use Laudis\Neo4j\Types\CypherList;
  */
 final class Client implements ClientInterface
 {
+    /**
+     * @var array<string, list<UnmanagedTransactionInterface<ResultFormat>>>
+     */
+    private array $boundTransactions = [];
+
+    /**
+     * @var array<string, SessionInterface<ResultFormat>>
+     */
+    private array $boundSessions = [];
+
     /**
      * @psalm-mutation-free
      *
@@ -54,16 +65,42 @@ final class Client implements ClientInterface
         return $this->runStatements([$statement], $alias)->first();
     }
 
+    private function getRunner(?string $alias = null): TransactionInterface|SessionInterface
+    {
+        $alias ??= $this->driverSetups->getDefaultAlias();
+
+        if (array_key_exists($alias, $this->boundTransactions) &&
+            count($this->boundTransactions[$alias]) > 0) {
+            return $this->boundTransactions[$alias][array_key_last($this->boundTransactions[$alias])];
+        }
+
+        return $this->getSession($alias);
+    }
+
+    private function getSession(?string $alias = null): SessionInterface
+    {
+        $alias ??= $this->driverSetups->getDefaultAlias();
+
+        if (array_key_exists($alias, $this->boundSessions)) {
+            return $this->boundSessions[$alias];
+        }
+
+        return $this->boundSessions[$alias] = $this->startSession($alias, $this->defaultSessionConfiguration);
+    }
+
     public function runStatements(iterable $statements, ?string $alias = null): CypherList
     {
-        $session = $this->startSession($alias, $this->defaultSessionConfiguration);
+        $runner = $this->getRunner($alias);
+        if ($runner instanceof SessionInterface) {
+            return $runner->runStatements($statements, $this->defaultTransactionConfiguration);
+        }
 
-        return $session->runStatements($statements, $this->defaultTransactionConfiguration);
+        return $runner->runStatements($statements);
     }
 
     public function beginTransaction(?iterable $statements = null, ?string $alias = null, ?TransactionConfiguration $config = null): UnmanagedTransactionInterface
     {
-        $session = $this->startSession($alias, $this->defaultSessionConfiguration);
+        $session = $this->getSession($alias);
         $config = $this->getTsxConfig($config);
 
         return $session->beginTransaction($statements, $config);
@@ -84,16 +121,24 @@ final class Client implements ClientInterface
 
     public function writeTransaction(callable $tsxHandler, ?string $alias = null, ?TransactionConfiguration $config = null)
     {
-        $sessionConfig = $this->defaultSessionConfiguration->withAccessMode(AccessMode::WRITE());
-        $startSession = $this->startSession($alias, $sessionConfig);
+        if ($this->defaultSessionConfiguration->getAccessMode() === AccessMode::WRITE()) {
+            $session = $this->getSession($alias);
+        } else {
+            $sessionConfig = $this->defaultSessionConfiguration->withAccessMode(AccessMode::WRITE());
+            $session = $this->startSession($alias, $sessionConfig);
+        }
 
-        return $startSession->writeTransaction($tsxHandler, $this->getTsxConfig($config));
+        return $session->writeTransaction($tsxHandler, $this->getTsxConfig($config));
     }
 
     public function readTransaction(callable $tsxHandler, ?string $alias = null, ?TransactionConfiguration $config = null)
     {
-        $sessionConfig = $this->defaultSessionConfiguration->withAccessMode(AccessMode::READ());
-        $session = $this->startSession($alias, $sessionConfig);
+        if ($this->defaultSessionConfiguration->getAccessMode() === AccessMode::READ()) {
+            $session = $this->getSession($alias);
+        } else {
+            $sessionConfig = $this->defaultSessionConfiguration->withAccessMode(AccessMode::WRITE());
+            $session = $this->startSession($alias, $sessionConfig);
+        }
 
         return $session->readTransaction($tsxHandler, $this->getTsxConfig($config));
     }
@@ -106,6 +151,42 @@ final class Client implements ClientInterface
     public function verifyConnectivity(?string $driver = null): bool
     {
         return $this->driverSetups->verifyConnectivity($this->defaultSessionConfiguration, $driver);
+    }
+
+    public function bindTransaction(?string $alias = null, ?TransactionConfiguration $config = null): void
+    {
+        $alias ??= $this->driverSetups->getDefaultAlias();
+
+        $this->boundTransactions[$alias] ??= [];
+        $this->boundTransactions[$alias][] = $this->beginTransaction(null, $alias, $config);
+    }
+
+    public function rollbackBoundTransaction(?string $alias = null, int $depth = 1): void
+    {
+        $this->popTransactions(static fn (UnmanagedTransactionInterface $tsx) => $tsx->rollback(), $alias, $depth);
+    }
+
+    /**
+     * @param callable(UnmanagedTransactionInterface<ResultFormat>): void $handler
+     */
+    private function popTransactions(callable $handler, ?string $alias = null, int $depth = 1): void
+    {
+        $alias ??= $this->driverSetups->getDefaultAlias();
+
+        if (!array_key_exists($alias, $this->boundTransactions)) {
+            return;
+        }
+
+        while (count($this->boundTransactions[$alias]) !== 0 && $depth !== 0) {
+            $tsx = array_pop($this->boundTransactions[$alias]);
+            $handler($tsx);
+            --$depth;
+        }
+    }
+
+    public function commitBoundTransaction(?string $alias = null, int $depth = 1): void
+    {
+        $this->popTransactions(static fn (UnmanagedTransactionInterface $tsx) => $tsx->commit(), $alias, $depth);
     }
 
     private function getTsxConfig(?TransactionConfiguration $config): TransactionConfiguration
