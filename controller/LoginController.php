@@ -2,7 +2,7 @@
 
 require "vendor/autoload.php";
 require_once __SITE_PATH .  '/model/userService.class.php';
-
+$config = require __SITE_PATH . '/app/config.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -30,31 +30,36 @@ class loginController extends BaseController{
     
     function processRegister()
     {
-        $name = $_POST['first_name'];
-        $lastname = $_POST['last_name'];
-        $email = $_POST['email'];
-        $username = $_POST['username'];
-        $password = $_POST['password'];
+        $name = isset($_POST['first_name']) ? $this->validateStringInput($_POST['first_name']) : false;
+        $lastname = isset($_POST['first_name']) ? $this->validateStringInput($_POST['first_name']) : false;
+        $email = isset($_POST['email']) ? $this->validateEmail($_POST['email']) : false;
+        $username = isset($_POST['username']) ? $this->validateStringInput($_POST['username']) : false;
+        $password = isset($_POST['password']) ? $this->validatePassword($_POST['password']) : false;
+
+        // if any of the fields or the email is not valid, abort the request and reroute user to login
+        if (!$name || !$lastname || !$email || !$username || !$password) {
+            header('Location: ' . __SITE_URL . 'index.php?rt=login/register');
+            exit();
+        }
 
         $userService = new UserService();
 
         if($userService->doesUserExist($email)){
-            echo "Account with this email already exists";
+            $_SESSION['registrationFail'] =  "<p class='error'>Korisnički račun s navedenom mail adresom postoji, pokušajte ponovno</p>";
+            header('Location: ' . __SITE_URL . 'index.php?rt=login/register');
+        } else if( $userService->doesUsernameExist($username)){
+            $_SESSION['registrationFail'] = "<p class='error'>Korisničko ime već postoji, pokušajte s drugim korisničkim imenom</p>";
+            header('Location: ' . __SITE_URL . 'index.php?rt=login/register');
         } else {
             if($userService->registerNewUser($name, $lastname, $email, $username, $password)){
-                echo "Account successfully created. Welcome email has been sent to your registered email.";
+                $_SESSION['registrationSuccess'] =  "<p class='success'>Korisnički račun uspješno stvoren. Potvrdi mail je poslan na Vašu mail adresu</p>";
                 // Send welcome email
                 if(isset($_POST['submit'])){
-                    if (isset($_POST['name'])) {
-                        $name = filter_var($_POST['name'], FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
-                    }
-                    if (isset($_POST['mail'])) {
-                        $email = filter_var($_POST['email'], FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
-                    }
                     
                     try {
-                    $companiEmail ="";
-                    $companiName ="Moj Turizam";
+                    $config = require __SITE_PATH . '/app/config.php';
+                    $companyEmail = $config['company']['Username'];
+                    $companyName = "Moj Turizam";
                     $subject = "Uspješna registracija Turizam";
                     $message = "Dragi/draga ".$name." drago nam je što ste se sa svojim mailom: ".$email."  prijavili na našu turisticku aplikaciju";
                     
@@ -66,11 +71,11 @@ class loginController extends BaseController{
                     $mail->Host = "smtp.gmail.com";
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                     $mail->Port = 587;
-                    $mail->Username = "";
-                    $mail -> Password ="";
+                    $mail->Username = $config['company']['Username'];
+                    $mail -> Password = $config['company']['Password'];
                     $mail->CharSet = "UTF-8";
     
-                    $mail->setFrom($companiEmail, $companiName);
+                    $mail->setFrom($companyEmail, $companyName);
                     $mail->addAddress($email);
     
                     $mail->Subject = $subject;
@@ -81,13 +86,14 @@ class loginController extends BaseController{
                     }
                     catch (Exception $e) {
                         error_log('Email wasnt send successfully ' . $e->getMessage());
+                        $_SESSION['registrationError'] =  "<p class='error'>Neuspjeli pokušaj registracije, pokušajte ponovno</p>";
                         header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
                     }
                     
                 }
                 
             } else {
-                echo "There was a problem creating your account.";
+                $_SESSION['registrationError'] =  "<p class='error'>Neuspjeli pokušaj registracije, pokušajte ponovno</p>";
                 header('Location: ' . __SITE_URL . 'index.php?rt=login/register');
             }
         }
@@ -110,7 +116,7 @@ class loginController extends BaseController{
             header('Location: ' . __SITE_URL . 'index.php?rt=sights/index');
             exit();
         } else {
-            $_SESSION['error'] = "Incorrect username or password, try again";
+            $_SESSION['loginError'] =  "<p class='error'>Netočan unos lozinke ili mail-a, pokušajte ponovno</p>";
             header('Location: ' . __SITE_URL . 'index.php?rt=login');
         }
     }
@@ -132,6 +138,39 @@ class loginController extends BaseController{
 
         header('Location: ' . __SITE_URL . 'index.php?rt=login');
     }
+    function sanitizeInput($data) {
+        $data = trim($data);
+        $data = stripslashes($data);
+        $data = htmlspecialchars($data);
+        return $data;
+    }
+
+    function validateStringInput($name) {
+        $name = $this->sanitizeInput($name);
+        if (!preg_match("/^[a-zA-Z-' ]*$/", $name)) {
+            $_SESSION['registrationError'] =  "<p class='error'>Nedozvoljeni unos znakova</p>";
+            return false;
+        }
+        return $name;
+    }
+
+    function validatePassword($password) {
+        $password = $this->sanitizeInput($password);
+        if (strlen($password) < 8) {
+            $_SESSION['registrationError'] =  "<p class='error'>Lozinka treba sadržavati najmanje 8 znakova</p>";
+            return false;
+        }
+        return $password;
+    }
+
+    function validateEmail($email) {
+        $email = $this->sanitizeInput($email);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['registrationError'] =  "<p class='error'>Korisnička adresa je neispravnog oblka</p>";
+            return false;
+        }
+        return $email;
+    }   
 }
 
 ?>

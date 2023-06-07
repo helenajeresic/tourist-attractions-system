@@ -153,10 +153,6 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
 
     public function testSessionOption(): void
     {
-        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
-            $this->markTestSkipped('Sessions are not supported');
-        }
-
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new CreateIndexes(
@@ -227,9 +223,6 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
      * argument as its first and only parameter. If an IndexInfo matching the
      * given name is found, it will be passed to the callback, which may perform
      * additional assertions.
-     *
-     * @param string   $indexName
-     * @param callable $callback
      */
     private function assertIndexExists(string $indexName, ?callable $callback = null): void
     {

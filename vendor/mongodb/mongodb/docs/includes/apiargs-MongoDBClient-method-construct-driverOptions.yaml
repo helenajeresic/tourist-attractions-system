@@ -8,6 +8,7 @@ description: |
   For the ``keyVaultClient`` option, you may pass a :phpclass:`MongoDB\\Client`
   instance, which will be unwrapped to provide a :php:`MongoDB\\Driver\\Manager <class.mongodb-driver-manager>`
   to the extension.
+
   .. versionadded:: 1.6
 interface: phpmethod
 operation: ~
@@ -45,7 +46,7 @@ name: serverApi
 type: :php:`MongoDB\\Driver\\ServerApi <class.mongodb-driver-serverapi>`
 description: |
   Used to declare an API version on the client. See the
-  :manual:`Versioned API tutorial </tutorial/versioned-api>` for usage.
+  :manual:`Stable API tutorial </tutorial/stable-api>` for usage.
 
   .. versionadded:: 1.9
 interface: phpmethod
