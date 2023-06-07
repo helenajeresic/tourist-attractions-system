@@ -1,13 +1,11 @@
 <?php require_once __SITE_PATH . '/view/_header.php';
+require_once __SITE_PATH . '/view/welcomeLogin.php';
 if (isset($_SESSION['error'])) {
     echo $_SESSION['error'];
     unset($_SESSION['error']);
 }
 ?>
-
-
-<?php require_once __SITE_PATH . '/view/_header.php'; ?>
-
+<br><br>
 <form method="post" action="<?php echo __SITE_URL . 'index.php?rt=login/processLoginForm' ?>">
         <div class="form-group">
             <label for="username">Korisničko ime</label><br>
