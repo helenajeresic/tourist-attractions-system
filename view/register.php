@@ -20,8 +20,10 @@
     <input type="submit" name="submit" value="Pošalji" />
 </form>
 
+<br>
 <div class="form-group">
             <form method="post" action="<?php echo __SITE_URL . 'index.php?rt=login' ?>">
+            <br>
             <div class="float-end">
             <br>
             <input class="btn btn-secondary" type="submit" name="register" value="Vrati se na prijavu"/>

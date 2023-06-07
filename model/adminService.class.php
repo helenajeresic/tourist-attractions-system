@@ -133,13 +133,18 @@ class AdminService {
         $session = $this->getNeoSession();
 
         $query = (string)'CREATE (n:Node {id: $addId, x_coordinate: $x_koordinata, y_coordinate: $y_koordinata});';
-        $param = ['id1' => $addId, 'x_koordinata' => $x_koordinata, 'y_koordinata' => $y_koordinata ];
+        $param = ['addId' => $addId, 'x_koordinata' => $x_koordinata, 'y_koordinata' => $y_koordinata ];
         $session->run($query, $param);
 
         // ovo možda ne radi zbog apoc plugina
-        $session->run('MATCH (a1:Attraction {id: $id1}), (a2:Attraction) WHERE a1.id <> a2.id
-            WITH point({x: a1.x_coordinate, y: a1.y_coordinate}) AS point1, point({x: a2.x_coordinate, y: a2.y_coordinate}) AS point2
-            WITH  apoc.spatial.distance(point1, point2) AS dist CREATE (a1)-[d:DISTANCE]->(a2) SET d.attribute = dist ' 
+        // $session->run('MATCH (a1:Attraction {id: $addId}), (a2:Attraction) WHERE a1.id <> a2.id
+        //     WITH point({x: a1.x_coordinate, y: a1.y_coordinate}) AS point1, point({x: a2.x_coordinate, y: a2.y_coordinate}) AS point2
+        //     WITH  apoc.spatial.distance(point1, point2) AS dist CREATE (a1)-[d:DISTANCE]->(a2) SET d.attribute = dist ' 
+        // , $param) ;
+
+        $session->run('MATCH (a1:Attraction {id: $addId}), (a2:Attraction) WHERE a1.id <> a2.id
+            WITH sqrt((a1.x_coordinate - a2.x_coordinate)^2 + (a1.y_coordinate - a2.y_coordinate)^2) AS dist 
+            CREATE (a1)-[d:DISTANCE]->(a2) SET d.attribute = dist ;' 
         , $param) ;
     }
 

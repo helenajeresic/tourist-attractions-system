@@ -18,9 +18,11 @@ class sightsController extends BaseController {
             $data = $ss->getAllSights();
             $this->registry->template->data = $data;
             $this->registry->template->show_attractions = $data;
+            $this->registry->template->welcome = true; 
             $this->registry->template->show("default");
         }
     }
+
 
     public function choose() {
         $this->registry->template->title = "Sights";
@@ -60,10 +62,11 @@ class sightsController extends BaseController {
         $show = $ss->getShortestPath($selectedList, $firstSelected);
         if($show === null){
             $this->registry->template->error = true;
-            echo "nisu dobro obradene znamenitorsi";
+            echo "nisu dobro obradene znamenitorsti";
         }
         else {
             $this->registry->template->show_attractions = $show;
+            $this->registry->template->shortest_path = true;
         }
         
         $this->registry->template->show("sights");

@@ -1,7 +1,16 @@
 <?php 
     require_once __SITE_PATH . '/view/_header.php';
     require_once __SITE_PATH . '/model/sight.class.php';
+    if($shortest_path === true){
+        require_once __SITE_PATH . '/view/path.php';
+    }
+
+    if($welcome === true){
+        require_once __SITE_PATH . '/view/welcome.php';
+    }
 ?>
+
+<br><br>
 
 <?php foreach( $show_attractions as $index => $d ) { 
     $src = "https://tourist-attractions-system-images.s3.eu-north-1.amazonaws.com/" . $d->__get( 'image' );

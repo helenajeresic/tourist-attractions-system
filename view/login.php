@@ -26,9 +26,10 @@ if (isset($_SESSION['error'])) {
 </form>
 
 <div class="form-group">
-            <label>Registriraj se</label>
             <form method="post" action="<?php echo __SITE_URL . 'index.php?rt=login/register' ?>">
-            <div class="float-end">
+            <div class="float">
+            <br>
+            <label>Registriraj se</label>
             <br>
             <input class="btn btn-secondary" type="submit" name="register" value="Registracija"/>
         </div>

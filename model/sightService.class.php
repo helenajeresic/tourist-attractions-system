@@ -50,77 +50,47 @@ class SightService {
 
 	function getShortestPath($attractionList, $firstSelected) {
 		try {
-
-			$sizeOfAttractionList = count($attractionList);
-			$idList = array();
 			if($attractionList !== [$firstSelected]){
-			//micemo firstSelected iz ukupne liste
-			$attractionList = array_diff($attractionList, [$firstSelected]);
-			$neoDatabase = $this->getNeoSession();
+				//micemo firstSelected iz ukupne liste
+				$attractionList = array_diff($attractionList, [$firstSelected]);
 
-			$params = [
-				'attractionIds' => array_values($attractionList),
-				'firstSelected' => $firstSelected,
-				'sizeOfAttractionList' => (int)$sizeOfAttractionList -1
-			];
+				$neoDatabase = $this->getNeoSession();
+				$idList = array();
 
-			
-			$idList[] = $firstSelected;
+				$sizeOfAttractionList = count($attractionList);
 
-			// $results = $neoDatabase->run('MATCH (p:Attraction {id: $firstSelected})
-			// MATCH (whitelist:Attraction)
-			// WHERE whitelist.id IN $attractionIds
-			// WITH p, collect(whitelist) AS whitelistNodes
-			// CALL apoc.path.spanningTree(p, {
-			// 	relationshipFilter: "DISTANCE>",
-			// 	whitelistNodes: whitelistNodes,
-			// 	uniqueness: "NODE_GLOBAL"
-			// })
-			// YIELD path
-			// RETURN path;' , $params);
-			$results = $neoDatabase->run('MATCH (startNode:Attraction {id: $firstSelected})
-			WITH startNode
-			
-			MATCH (attraction:Attraction)
-			WHERE attraction.id IN $attractionIds AND attraction <> startNode
-			WITH startNode, collect(attraction) AS attractions
+				
+				$idList[] = $firstSelected;
 
-			WITH startNode, attractions, apoc.coll.randomItem(attractions) AS endNode
-
-				CALL apoc.algo.dijkstra(
-				startNode,
-				endNode,
-			  "|DISTANCE",
-			  "attribute",
-			  NaN,
-			  size(attractions) + 1
-			) YIELD path, weight
-			WHERE ALL(n IN attractions WHERE n IN nodes(path))
-			AND size(nodes(path)) = size(attractions) + 1
-							
-			RETURN nodes(path) AS nodes, relationships(path) AS relationships;' , $params);
-			// WHERE length(path) = $sizeOfAttractionList
-			if($results->isEmpty()) {
-				error_log("prazno");
-				sleep(2);
-			}
-			else {
-				// LIMITALI smo na 1 tako da ce se ovo vjv samo 1 vrtiti
-				foreach ($results as $result) {
-					$paths = $result->values();
-
-					foreach($paths as $path){
-						foreach($path as $node){
-							error_log("nod je" . $node->get('id'));
-						}
+				for( $i = 0; $i < $sizeOfAttractionList; ++$i){
+					$params = [
+						'attractionIds' => array_values($attractionList),
+						'firstSelected' => $firstSelected,
+					];
+					$results = $neoDatabase->run('
+					MATCH (startNode:Attraction {id: $firstSelected})-[dist:DISTANCE]-(next:Attraction)
+					WHERE next.id IN $attractionIds AND next <> startNode
+					RETURN next.id, dist.attribute AS distance
+					ORDER BY distance ASC
+					LIMIT 1;' , $params);
+					
+					if($results->isEmpty()) {
+						error_log("prazno");
+						sleep(2);
 					}
+					else{
+						error_log("dobro je");
+						$firstSelected = $results->first()['next.id'];
+						$attractionList = array_diff($attractionList, [(string)$firstSelected]);
+						$idList[] = $firstSelected;
+					}
+
 					
 				}
 			}
-		}
-		else{
-			$idList = array();
-		}
+			else{
+				$idList = array();
+			}
 			$collection = $this->getMongoAttractions();
 			$arr = array();
 
