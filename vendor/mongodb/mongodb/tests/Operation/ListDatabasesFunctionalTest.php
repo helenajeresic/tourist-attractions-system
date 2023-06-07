@@ -8,6 +8,8 @@ use MongoDB\Operation\InsertOne;
 use MongoDB\Operation\ListDatabases;
 use MongoDB\Tests\CommandObserver;
 
+use function version_compare;
+
 class ListDatabasesFunctionalTest extends FunctionalTestCase
 {
     public function testListDatabases(): void
@@ -49,13 +51,16 @@ class ListDatabasesFunctionalTest extends FunctionalTestCase
             },
             function (array $event): void {
                 $this->assertObjectHasAttribute('authorizedDatabases', $event['started']->getCommand());
-                $this->assertSame(true, $event['started']->getCommand()->authorizedDatabases);
             }
         );
     }
 
     public function testFilterOption(): void
     {
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('listDatabase command "filter" option is not supported');
+        }
+
         $server = $this->getPrimaryServer();
 
         $insertOne = new InsertOne($this->getDatabaseName(), $this->getCollectionName(), ['x' => 1]);
@@ -77,6 +82,10 @@ class ListDatabasesFunctionalTest extends FunctionalTestCase
 
     public function testSessionOption(): void
     {
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('Sessions are not supported');
+        }
+
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new ListDatabases(

@@ -1,10 +1,5 @@
 <?php
 
-/* Enable strict types to disable type coercion for arguments. Without this, the
- * non-int test values 3.14 and true would be silently coerced to integers,
- * which is not what we're expecting to test here. */
-declare(strict_types=1);
-
 namespace MongoDB\Tests\Model;
 
 use MongoDB\Collection;
@@ -16,7 +11,6 @@ use MongoDB\Operation\DropCollection;
 use MongoDB\Operation\Find;
 use MongoDB\Tests\CommandObserver;
 use MongoDB\Tests\FunctionalTestCase;
-use TypeError;
 
 use function array_merge;
 use function sprintf;
@@ -44,8 +38,13 @@ class ChangeStreamIteratorTest extends FunctionalTestCase
      */
     public function testFirstBatchArgumentTypeCheck($firstBatchSize): void
     {
-        $this->expectException(TypeError::class);
+        $this->expectException(InvalidArgumentException::class);
         new ChangeStreamIterator($this->collection->find(), $firstBatchSize, null, null);
+    }
+
+    public function provideInvalidIntegerValues()
+    {
+        return $this->wrapValuesForDataProvider($this->getInvalidIntegerValues());
     }
 
     public function testInitialResumeToken(): void
@@ -74,7 +73,7 @@ class ChangeStreamIteratorTest extends FunctionalTestCase
      */
     public function testPostBatchResumeTokenArgumentTypeCheck($postBatchResumeToken): void
     {
-        $this->expectException(TypeError::class);
+        $this->expectException(InvalidArgumentException::class);
         new ChangeStreamIterator($this->collection->find(), 0, null, $postBatchResumeToken);
     }
 

@@ -38,11 +38,9 @@ class IsBsonTypeTest extends TestCase
 
     public function provideTypes()
     {
-        $undefined = toPHP(fromJSON('{ "x": {"$undefined": true} }'))->x;
-        $symbol = toPHP(fromJSON('{ "x": {"$symbol": "test"} }'))->x;
-        $dbPointer = toPHP(fromJSON('{ "x": {"$dbPointer": {"$ref": "db.coll", "$id" : { "$oid" : "5a2e78accd485d55b405ac12" }  }} }'))->x;
-        $int64 = unserialize('C:18:"MongoDB\BSON\Int64":28:{a:1:{s:7:"integer";s:1:"1";}}');
-        $long = PHP_INT_SIZE == 4 ? unserialize('C:18:"MongoDB\BSON\Int64":38:{a:1:{s:7:"integer";s:10:"4294967296";}}') : 4294967296;
+        $undefined = toPHP(fromJSON('{ "undefined": {"$undefined": true} }'));
+        $symbol = toPHP(fromJSON('{ "symbol": {"$symbol": "test"} }'));
+        $dbPointer = toPHP(fromJSON('{ "dbPointer": {"$dbPointer": {"$ref": "phongo.test", "$id" : { "$oid" : "5a2e78accd485d55b405ac12" }  }} }'));
 
         return [
             'double' => ['double', 1.4],
@@ -54,28 +52,22 @@ class IsBsonTypeTest extends TestCase
             'array(indexed array)' => ['array', ['foo']],
             'array(BSONArray)' => ['array', new BSONArray()],
             'binData' => ['binData', new Binary('', 0)],
-            'undefined' => ['undefined', $undefined],
+            'undefined' => ['undefined', $undefined->undefined],
             'objectId' => ['objectId', new ObjectId()],
             'bool' => ['bool', true],
             'date' => ['date', new UTCDateTime()],
             'null' => ['null', null],
             'regex' => ['regex', new Regex('.*')],
-            'dbPointer' => ['dbPointer', $dbPointer],
+            'dbPointer' => ['dbPointer', $dbPointer->dbPointer],
             'javascript' => ['javascript', new Javascript('foo = 1;')],
-            'symbol' => ['symbol', $symbol],
+            'symbol' => ['symbol', $symbol->symbol],
             'javascriptWithScope' => ['javascriptWithScope', new Javascript('foo = 1;', ['x' => 1])],
             'int' => ['int', 1],
             'timestamp' => ['timestamp', new Timestamp(0, 0)],
-            'long(int64)' => ['long', $int64],
-            'long(long)' => ['long', $long],
+            'long' => ['long', PHP_INT_SIZE == 4 ? unserialize('C:18:"MongoDB\BSON\Int64":38:{a:1:{s:7:"integer";s:10:"4294967296";}}') : 4294967296],
             'decimal' => ['decimal', new Decimal128('18446744073709551616')],
             'minKey' => ['minKey', new MinKey()],
             'maxKey' => ['maxKey', new MaxKey()],
-            'number(double)' => ['number', 1.4],
-            'number(decimal)' => ['number', new Decimal128('18446744073709551616')],
-            'number(int)' => ['number', 1],
-            'number(int64)' => ['number', $int64],
-            'number(long)' => ['number', $long],
         ];
     }
 
@@ -97,18 +89,8 @@ class IsBsonTypeTest extends TestCase
         $c = IsBsonType::anyOf('double', 'int');
 
         $this->assertResult(true, $c, 1, 'int is double or int');
-        $this->assertResult(true, $c, 1.4, 'double is double or int');
+        $this->assertResult(true, $c, 1.4, 'int is double or int');
         $this->assertResult(false, $c, 'foo', 'string is not double or int');
-    }
-
-    public function testAnyOfWithNumberAlias(): void
-    {
-        $c = IsBsonType::anyOf('number', 'string');
-
-        $this->assertResult(true, $c, 1, 'int is number or string');
-        $this->assertResult(true, $c, 1.4, 'double is number or string');
-        $this->assertResult(true, $c, 'foo', 'string is number or string');
-        $this->assertResult(false, $c, true, 'bool is not number or string');
     }
 
     public function testErrorMessage(): void
@@ -181,7 +163,7 @@ class IsBsonTypeTest extends TestCase
 // phpcs:disable Squiz.Classes.ClassFileName.NoMatch
 class SerializableArray implements Serializable
 {
-    public function bsonSerialize(): array
+    public function bsonSerialize()
     {
         return ['foo'];
     }
@@ -189,7 +171,7 @@ class SerializableArray implements Serializable
 
 class SerializableObject implements Serializable
 {
-    public function bsonSerialize(): array
+    public function bsonSerialize()
     {
         return ['x' => 1];
     }

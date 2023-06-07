@@ -41,6 +41,10 @@ class FindTest extends TestCase
             $options[][] = ['collation' => $value];
         }
 
+        foreach ($this->getInvalidStringValues() as $value) {
+            $options[][] = ['comment' => $value];
+        }
+
         foreach ($this->getInvalidIntegerValues() as $value) {
             $options[][] = ['cursorType' => $value];
         }

@@ -22,7 +22,6 @@ use function MongoDB\Driver\Monitoring\addSubscriber;
 use function MongoDB\Driver\Monitoring\removeSubscriber;
 use function PHPUnit\Framework\assertArrayHasKey;
 use function PHPUnit\Framework\assertCount;
-use function PHPUnit\Framework\assertGreaterThanOrEqual;
 use function PHPUnit\Framework\assertInstanceOf;
 use function PHPUnit\Framework\assertIsBool;
 use function PHPUnit\Framework\assertIsObject;
@@ -151,7 +150,7 @@ final class EventObserver implements CommandSubscriber
     }
 
     /**
-     * @see https://php.net/manual/en/mongodb-driver-monitoring-commandsubscriber.commandfailed.php
+     * @see https://www.php.net/manual/en/mongodb-driver-monitoring-commandsubscriber.commandfailed.php
      */
     public function commandFailed(CommandFailedEvent $event): void
     {
@@ -159,7 +158,7 @@ final class EventObserver implements CommandSubscriber
     }
 
     /**
-     * @see https://php.net/manual/en/mongodb-driver-monitoring-commandsubscriber.commandstarted.php
+     * @see https://www.php.net/manual/en/mongodb-driver-monitoring-commandsubscriber.commandstarted.php
      */
     public function commandStarted(CommandStartedEvent $event): void
     {
@@ -167,7 +166,7 @@ final class EventObserver implements CommandSubscriber
     }
 
     /**
-     * @see https://php.net/manual/en/mongodb-driver-monitoring-commandsubscriber.commandsucceeded.php
+     * @see https://www.php.net/manual/en/mongodb-driver-monitoring-commandsubscriber.commandsucceeded.php
      */
     public function commandSucceeded(CommandSucceededEvent $event): void
     {
@@ -205,13 +204,9 @@ final class EventObserver implements CommandSubscriber
         Assert::fail('Not enough CommandStartedEvents observed');
     }
 
-    public function assert(array $expectedEvents, bool $ignoreExtraEvents): void
+    public function assert(array $expectedEvents): void
     {
-        if ($ignoreExtraEvents) {
-            assertGreaterThanOrEqual(count($expectedEvents), count($this->actualEvents));
-        } else {
-            assertCount(count($expectedEvents), $this->actualEvents);
-        }
+        assertCount(count($expectedEvents), $this->actualEvents);
 
         $mi = new MultipleIterator(MultipleIterator::MIT_NEED_ANY);
         $mi->attachIterator(new ArrayIterator($expectedEvents));
@@ -219,10 +214,6 @@ final class EventObserver implements CommandSubscriber
 
         foreach ($mi as $keys => $events) {
             [$expectedEvent, $actualEvent] = $events;
-
-            if ($ignoreExtraEvents && $expectedEvent === null) {
-                break;
-            }
 
             assertIsObject($expectedEvent);
             $expectedEvent = (array) $expectedEvent;
@@ -262,7 +253,7 @@ final class EventObserver implements CommandSubscriber
 
     private function assertCommandStartedEvent(CommandStartedEvent $actual, stdClass $expected, string $message): void
     {
-        Util::assertHasOnlyKeys($expected, ['command', 'commandName', 'databaseName', 'hasServiceId', 'hasServerConnectionId']);
+        Util::assertHasOnlyKeys($expected, ['command', 'commandName', 'databaseName', 'hasServiceId']);
 
         if (isset($expected->command)) {
             assertIsObject($expected->command);
@@ -284,16 +275,11 @@ final class EventObserver implements CommandSubscriber
             assertIsBool($expected->hasServiceId);
             assertSame($actual->getServiceId() !== null, $expected->hasServiceId, $message . ': hasServiceId matches');
         }
-
-        if (isset($expected->hasServerConnectionId)) {
-            assertIsBool($expected->hasServerConnectionId);
-            assertSame($actual->getServerConnectionId() !== null, $expected->hasServerConnectionId, $message . ': hasServerConnectionId matches');
-        }
     }
 
     private function assertCommandSucceededEvent(CommandSucceededEvent $actual, stdClass $expected, string $message): void
     {
-        Util::assertHasOnlyKeys($expected, ['reply', 'commandName', 'hasServiceId', 'hasServerConnectionId']);
+        Util::assertHasOnlyKeys($expected, ['reply', 'commandName', 'hasServiceId']);
 
         if (isset($expected->reply)) {
             assertIsObject($expected->reply);
@@ -310,16 +296,11 @@ final class EventObserver implements CommandSubscriber
             assertIsBool($expected->hasServiceId);
             assertSame($actual->getServiceId() !== null, $expected->hasServiceId, $message . ': hasServiceId matches');
         }
-
-        if (isset($expected->hasServerConnectionId)) {
-            assertIsBool($expected->hasServerConnectionId);
-            assertSame($actual->getServerConnectionId() !== null, $expected->hasServerConnectionId, $message . ': hasServerConnectionId matches');
-        }
     }
 
     private function assertCommandFailedEvent(CommandFailedEvent $actual, stdClass $expected, string $message): void
     {
-        Util::assertHasOnlyKeys($expected, ['commandName', 'hasServiceId', 'hasServerConnectionId']);
+        Util::assertHasOnlyKeys($expected, ['commandName', 'hasServiceId']);
 
         if (isset($expected->commandName)) {
             assertIsString($expected->commandName);
@@ -329,11 +310,6 @@ final class EventObserver implements CommandSubscriber
         if (isset($expected->hasServiceId)) {
             assertIsBool($expected->hasServiceId);
             assertSame($actual->getServiceId() !== null, $expected->hasServiceId, $message . ': hasServiceId matches');
-        }
-
-        if (isset($expected->hasServerConnectionId)) {
-            assertIsBool($expected->hasServerConnectionId);
-            assertSame($actual->getServerConnectionId() !== null, $expected->hasServerConnectionId, $message . ': hasServerConnectionId matches');
         }
     }
 

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,7 +33,7 @@ use function MongoDB\is_pipeline;
  *
  * @api
  * @see \MongoDB\Collection::replaceOne()
- * @see https://mongodb.com/docs/manual/reference/command/update/
+ * @see http://docs.mongodb.org/manual/reference/command/update/
  */
 class ReplaceOne implements Executable
 {
@@ -48,11 +48,13 @@ class ReplaceOne implements Executable
      *  * bypassDocumentValidation (boolean): If true, allows the write to
      *    circumvent document level validation.
      *
+     *    For servers < 3.2, this option is ignored as document level validation
+     *    is not available.
+     *
      *  * collation (document): Collation specification.
      *
-     *  * comment (mixed): BSON value to attach as a comment to this command.
-     *
-     *    This is not supported for servers versions < 4.4.
+     *    This is not supported for server versions < 3.4 and will result in an
+     *    exception at execution time if used.
      *
      *  * hint (string|document): The index to use. Specify either the index
      *    name as a string or the index key pattern as a document. If specified,
@@ -63,13 +65,10 @@ class ReplaceOne implements Executable
      *
      *  * session (MongoDB\Driver\Session): Client session.
      *
+     *    Sessions are not supported for server versions < 3.6.
+     *
      *  * upsert (boolean): When true, a new document is created if no document
      *    matches the query. The default is false.
-     *
-     *  * let (document): Map of parameter names and values. Values must be
-     *    constant or closed expressions that do not reference document fields.
-     *    Parameters can then be accessed as variables in an aggregate
-     *    expression context (e.g. "$$var").
      *
      *  * writeConcern (MongoDB\Driver\WriteConcern): Write concern.
      *
@@ -80,7 +79,7 @@ class ReplaceOne implements Executable
      * @param array        $options        Command options
      * @throws InvalidArgumentException for parameter/option parsing errors
      */
-    public function __construct(string $databaseName, string $collectionName, $filter, $replacement, array $options = [])
+    public function __construct($databaseName, $collectionName, $filter, $replacement, array $options = [])
     {
         if (! is_array($replacement) && ! is_object($replacement)) {
             throw InvalidArgumentException::invalidType('$replacement', $replacement, 'array or object');
@@ -107,6 +106,7 @@ class ReplaceOne implements Executable
      * Execute the operation.
      *
      * @see Executable::execute()
+     * @param Server $server
      * @return UpdateResult
      * @throws UnsupportedException if collation is used and unsupported
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)

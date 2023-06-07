@@ -28,6 +28,10 @@ class UpdateFunctionalTest extends FunctionalTestCase
 
     public function testSessionOption(): void
     {
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('Sessions are not supported');
+        }
+
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new Update(
@@ -48,6 +52,10 @@ class UpdateFunctionalTest extends FunctionalTestCase
 
     public function testBypassDocumentValidationSetWhenTrue(): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('bypassDocumentValidation is not supported');
+        }
+
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new Update(
@@ -69,6 +77,10 @@ class UpdateFunctionalTest extends FunctionalTestCase
 
     public function testBypassDocumentValidationUnsetWhenFalse(): void
     {
+        if (version_compare($this->getServerVersion(), '3.2.0', '<')) {
+            $this->markTestSkipped('bypassDocumentValidation is not supported');
+        }
+
         (new CommandObserver())->observe(
             function (): void {
                 $operation = new Update(
@@ -85,6 +97,26 @@ class UpdateFunctionalTest extends FunctionalTestCase
                 $this->assertObjectNotHasAttribute('bypassDocumentValidation', $event['started']->getCommand());
             }
         );
+    }
+
+    public function testHintOptionUnsupportedClientSideError(): void
+    {
+        if (version_compare($this->getServerVersion(), '3.4.0', '>=')) {
+            $this->markTestSkipped('server reports error for unsupported update options');
+        }
+
+        $operation = new Update(
+            $this->getDatabaseName(),
+            $this->getCollectionName(),
+            ['_id' => 1],
+            ['$inc' => ['x' => 1]],
+            ['hint' => '_id_']
+        );
+
+        $this->expectException(UnsupportedException::class);
+        $this->expectExceptionMessage('Hint is not supported by the server executing this operation');
+
+        $operation->execute($this->getPrimaryServer());
     }
 
     public function testHintOptionAndUnacknowledgedWriteConcernUnsupportedClientSideError(): void
@@ -267,6 +299,8 @@ class UpdateFunctionalTest extends FunctionalTestCase
 
     /**
      * Create data fixtures.
+     *
+     * @param integer $n
      */
     private function createFixtures(int $n): void
     {

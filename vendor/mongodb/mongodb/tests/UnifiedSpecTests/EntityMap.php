@@ -7,7 +7,6 @@ use MongoDB\ChangeStream;
 use MongoDB\Client;
 use MongoDB\Collection;
 use MongoDB\Database;
-use MongoDB\Driver\ClientEncryption;
 use MongoDB\Driver\Cursor;
 use MongoDB\Driver\Session;
 use MongoDB\GridFS\Bucket;
@@ -58,7 +57,7 @@ class EntityMap implements ArrayAccess
     }
 
     /**
-     * @see https://php.net/arrayaccess.offsetexists
+     * @see http://php.net/arrayaccess.offsetexists
      */
     public function offsetExists($id): bool
     {
@@ -68,7 +67,7 @@ class EntityMap implements ArrayAccess
     }
 
     /**
-     * @see https://php.net/arrayaccess.offsetget
+     * @see http://php.net/arrayaccess.offsetget
      * @return mixed
      */
     #[ReturnTypeWillChange]
@@ -81,7 +80,7 @@ class EntityMap implements ArrayAccess
     }
 
     /**
-     * @see https://php.net/arrayaccess.offsetset
+     * @see http://php.net/arrayaccess.offsetset
      */
     public function offsetSet($id, $value): void
     {
@@ -89,7 +88,7 @@ class EntityMap implements ArrayAccess
     }
 
     /**
-     * @see https://php.net/arrayaccess.offsetunset
+     * @see http://php.net/arrayaccess.offsetunset
      */
     public function offsetUnset($id): void
     {
@@ -183,7 +182,6 @@ class EntityMap implements ArrayAccess
         if (self::$isSupportedType === null) {
             self::$isSupportedType = logicalOr(
                 isInstanceOf(Client::class),
-                isInstanceOf(ClientEncryption::class),
                 isInstanceOf(Database::class),
                 isInstanceOf(Collection::class),
                 isInstanceOf(Session::class),

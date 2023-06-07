@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   https://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,9 +49,12 @@ class BSONDocument extends ArrayObject implements JsonSerializable, Serializable
      * This overrides the parent constructor to allow property access of entries
      * by default.
      *
-     * @see https://php.net/arrayobject.construct
+     * @see http://php.net/arrayobject.construct
+     * @param array   $input
+     * @param integer $flags
+     * @param string  $iteratorClass
      */
-    public function __construct(array $input = [], int $flags = ArrayObject::ARRAY_AS_PROPS, string $iteratorClass = 'ArrayIterator')
+    public function __construct($input = [], $flags = ArrayObject::ARRAY_AS_PROPS, $iteratorClass = 'ArrayIterator')
     {
         parent::__construct($input, $flags, $iteratorClass);
     }
@@ -59,8 +62,9 @@ class BSONDocument extends ArrayObject implements JsonSerializable, Serializable
     /**
      * Factory method for var_export().
      *
-     * @see https://php.net/oop5.magic#object.set-state
-     * @see https://php.net/var-export
+     * @see http://php.net/oop5.magic#object.set-state
+     * @see http://php.net/var-export
+     * @param array $properties
      * @return self
      */
     public static function __set_state(array $properties)
@@ -74,10 +78,9 @@ class BSONDocument extends ArrayObject implements JsonSerializable, Serializable
     /**
      * Serialize the document to BSON.
      *
-     * @see https://php.net/mongodb-bson-serializable.bsonserialize
+     * @see http://php.net/mongodb-bson-serializable.bsonserialize
      * @return object
      */
-    #[ReturnTypeWillChange]
     public function bsonSerialize()
     {
         return (object) $this->getArrayCopy();
@@ -86,10 +89,9 @@ class BSONDocument extends ArrayObject implements JsonSerializable, Serializable
     /**
      * Unserialize the document to BSON.
      *
-     * @see https://php.net/mongodb-bson-unserializable.bsonunserialize
+     * @see http://php.net/mongodb-bson-unserializable.bsonunserialize
      * @param array $data Array data
      */
-    #[ReturnTypeWillChange]
     public function bsonUnserialize(array $data)
     {
         parent::__construct($data, ArrayObject::ARRAY_AS_PROPS);
@@ -98,7 +100,7 @@ class BSONDocument extends ArrayObject implements JsonSerializable, Serializable
     /**
      * Serialize the array to JSON.
      *
-     * @see https://php.net/jsonserializable.jsonserialize
+     * @see http://php.net/jsonserializable.jsonserialize
      * @return object
      */
     #[ReturnTypeWillChange]

@@ -178,7 +178,7 @@ class TransactionsSpecTest extends FunctionalTestCase
         }
 
         if (isset($test->expectations)) {
-            $commandExpectations = CommandExpectations::fromTransactions($context->getClient(), $test->expectations);
+            $commandExpectations = CommandExpectations::fromTransactions($test->expectations);
             $commandExpectations->startMonitoring();
         }
 
@@ -352,7 +352,8 @@ class TransactionsSpecTest extends FunctionalTestCase
     /**
      * Work around potential error executing distinct on sharded clusters.
      *
-     * @see https://github.com/mongodb/specifications/tree/master/source/transactions/tests#why-do-tests-that-run-distinct-sometimes-fail-with-staledbversion
+     * @param array $operations
+     * @see https://github.com/mongodb/specifications/tree/master/source/transactions/tests#why-do-tests-that-run-distinct-sometimes-fail-with-staledbversionts.
      */
     private function preventStaleDbVersionError(array $operations): void
     {

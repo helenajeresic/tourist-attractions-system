@@ -604,16 +604,7 @@
       ]
     },
     {
-      "description": "estimatedDocumentCount appends declared API version",
-      "runOnRequirements": [
-        {
-          "minServerVersion": "5.0.9",
-          "maxServerVersion": "5.0.99"
-        },
-        {
-          "minServerVersion": "5.3.2"
-        }
-      ],
+      "description": "estimatedDocumentCount appends declared API version on 4.9.0 or greater",
       "operations": [
         {
           "name": "estimatedDocumentCount",
@@ -628,7 +619,22 @@
             {
               "commandStartedEvent": {
                 "command": {
-                  "count": "test",
+                  "aggregate": "test",
+                  "pipeline": [
+                    {
+                      "$collStats": {
+                        "count": {}
+                      }
+                    },
+                    {
+                      "$group": {
+                        "_id": 1,
+                        "n": {
+                          "$sum": "$count"
+                        }
+                      }
+                    }
+                  ],
                   "apiVersion": "1",
                   "apiStrict": {
                     "$$unsetOrMatches": false
