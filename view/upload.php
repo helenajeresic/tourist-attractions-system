@@ -23,7 +23,7 @@ if(isset($_SESSION['error'])) {
         <label for="slika">Slika:</label>
         <input type="file" name="slika" id="slika" required><br>
         <br>
-        <input type="submit" value="Upload">
+        <input type="submit" value="Učitaj">
     </form>
 </form>
 

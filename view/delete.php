@@ -12,7 +12,7 @@
                 
                 <div>
                     <br>
-                    <input type="submit" name="submit" value="Obrisi!">
+                    <input type="submit" name="submit" value="Izbriši">
                 </div>
 
 </form>

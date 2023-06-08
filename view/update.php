@@ -25,7 +25,7 @@
         <label for="slika">Slika:</label>
         <input type="file" name="slika" id="slika"><br>
         <br>
-        <input type="submit" value="Update">
+        <input type="submit" value="Promijeni">
     </form>
 </form>
 
