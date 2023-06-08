@@ -7,12 +7,14 @@ require_once __SITE_PATH . '/app/database/mongodb.class.php';
 require_once __SITE_PATH . '/app/database/neo4j.class.php';
 //require_once __SITE_PATH . '/app/database/load_database.php';
 
-spl_autoload_register(function ($class_name){
+spl_autoload_register(function ($class_name) {
     $filename = $class_name . '.php';
     $file = __SITE_PATH . '/model/' . $filename;
-    if(file_exists($file) === false){
+
+    if(file_exists($file) === false) {
         return false;
     }
+    
     require_once($file);
     return true;
 });

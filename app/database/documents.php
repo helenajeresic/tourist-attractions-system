@@ -3,14 +3,15 @@
 require_once __SITE_PATH . '/vendor/autoload.php';
 
 use MongoDB\BSON\ObjectId;
-function generateRandomString($length = 10)
-{
+function generateRandomString($length = 10) {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $charactersLength = strlen($characters);
     $randomString = '';
-    for ($i = 0; $i < $length; $i++) {
+
+    for($i = 0; $i < $length; $i++) {
         $randomString .= $characters[rand(0, $charactersLength - 1)];
     }
+
     return $randomString;
 }
 
@@ -118,7 +119,7 @@ $documents_attractions = [
                         značajke romaničkih prozora; Gotička vrata Ivana Parlera; i niz kipova od 12 apostola, 
                         zajedno s Isusom, Marijom i Sv Markom. Svakako potražite i prekrasnu unutrašnjost sa svojim 
                         kipovima poznatih hrvatskih kipara Ivana Meštrovića, zajedno s freskama koje je naslikao 
-                        Jozo Kljaković",
+                        Jozo Kljaković.",
         "image_path" => "image1.jpg",
         "x_coordinate" => 3,
         "y_coordinate" => 40
@@ -152,7 +153,7 @@ $documents_attractions = [
                         Bliskog istoka, Dalekog Istoka, Indije, te Inke i Pre-Inke Južne 
                         Amerike. Tu je i velika staklena zbirka iz Europe i drugih mediteranskih 
                         zemalja, zajedno s namještajem iz srednjeg vijeka i skulpturama iz 
-                        antičke Grčke",
+                        antičke Grčke.",
         "image_path" => "image3.jpg",
         "x_coordinate" => 7,
         "y_coordinate" => 79

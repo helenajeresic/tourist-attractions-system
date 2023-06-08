@@ -9,6 +9,7 @@
         "laudis/neo4j-php-client": "^3.0",
         "phpmailer/phpmailer": "^6.8"
     },
+    
     "config": {
         "allow-plugins": {
             "php-http/discovery": true

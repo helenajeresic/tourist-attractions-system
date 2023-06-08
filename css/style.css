@@ -101,7 +101,6 @@ a{
 }
 
 /*navigacijska traka*/
-/* Add a black background color to the top navigation */
 .topnav {
   background-color: #111;
   overflow: hidden;
@@ -109,7 +108,6 @@ a{
   justify-content: center;
 }
 
-/* Style the links inside the navigation bar */
 .topnav a {
   margin-top: 0px;
   float: left;
@@ -121,19 +119,16 @@ a{
   font-size: 17px;
 }
 
-/* Change the color of links on hover */
 .topnav a:hover {
   background-color: #ddd;
   color: black;
 }
 
-/* Add an active class to highlight the current page */
 .topnav a.active {
   background-color: #04AA6D;
   color: white;
 }
 
-/* Hide the link that should open and close the topnav on small screens */
 .topnav .icon {
   display: none;
 }
@@ -154,7 +149,6 @@ a{
   line-height: 1.5;
 }
 
-
 select {
   color: white;
   width: 100%;
@@ -163,8 +157,6 @@ select {
   border-radius: 2px;
   background-color: #111;
 }
-
-
 
 input[type=number],input[type=text],input[type=password],input[type=email], textarea {
   width: 100%;
@@ -175,12 +167,10 @@ input[type=number],input[type=text],input[type=password],input[type=email], text
   resize: vertical;
 }
 
-
 label {
   padding: 12px 12px 12px 0;
   display: inline-block;
 }
-
 
 input[type=submit] {
   background-color: #04AA6D;
@@ -191,7 +181,6 @@ input[type=submit] {
   cursor: pointer;
   float: left;
 }
-
 
 .col-25 {
   float: left;
@@ -217,7 +206,6 @@ input[type=submit] {
     margin-top: 0;
   }
 }
-
 
 .error {
   color: red;

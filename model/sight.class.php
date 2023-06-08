@@ -1,8 +1,6 @@
 <?php
 
-
-class Sight
-{
+class Sight {
     private $id;
     private $name;
     private $desc;
@@ -10,8 +8,7 @@ class Sight
     private $x_coord;
     private $y_coord;
 
-    function __construct( $id, $name, $desc, $image, $x_coord, $y_coord )
-	{
+    function __construct( $id, $name, $desc, $image, $x_coord, $y_coord ) {
 		$this->id = $id;
 		$this->name = $name;
 		$this->desc = $desc;

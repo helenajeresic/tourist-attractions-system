@@ -6,8 +6,8 @@ require_once __SITE_PATH .  '/controller/SightsController.php';
 
 
 class deleteController extends BaseController {
-    public function index(){
-        if(isset($_SESSION['admin'])){
+    public function index() {
+        if(isset($_SESSION['admin'])) {
             $this->registry->template->title = "Delete";
             $this->registry->template->error = false;
     
@@ -22,7 +22,7 @@ class deleteController extends BaseController {
         }
     }
 
-    public function processDelete(){
+    public function processDelete() {
         if(isset($_POST['lang'])) {
             $selected = $_POST['lang'];
 

@@ -1,11 +1,11 @@
 <?php 
     require_once __SITE_PATH . '/view/_header.php';
     require_once __SITE_PATH . '/model/sight.class.php';
-    if($shortest_path === true){
+    if($shortest_path === true) {
         require_once __SITE_PATH . '/view/path.php';
     }
 
-    if($welcome === true){
+    if($welcome === true) {
         require_once __SITE_PATH . '/view/welcome.php';
     }
 ?>

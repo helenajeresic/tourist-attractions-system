@@ -7,10 +7,10 @@ use Laudis\Neo4j\Types\Path;
 
 class UserService {
 
-    public function __construct(){}
+    public function __construct() {}
 
-    function isUserRegistered($username, $password){
-        try{
+    function isUserRegistered($username, $password) {
+        try {
             $client = mongoDB::getClient();
             $database = mongoDB::getDatabase();
 
@@ -23,12 +23,13 @@ class UserService {
             } else {
                 return false;
             }
+        } catch(PDOException $e) { 
+            exit( 'PDO error ' . $e->getMessage() ); 
         }
-        catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
     }
 
-    function doesUserExist($email){
-        try{
+    function doesUserExist($email) {
+        try {
             $client = mongoDB::getClient();
             $database = mongoDB::getDatabase();
 
@@ -36,18 +37,18 @@ class UserService {
             $document = $collection->findOne(['email' => ['$eq' => $email]]);
             
             return $document != null;
+        } catch(PDOException $e) {
+            exit( 'PDO error ' . $e->getMessage() ); 
         }
-        catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
     }
 
-    function registerNewUser($name, $lastname, $email, $username, $password){
-        try{
+    function registerNewUser($name, $lastname, $email, $username, $password) {
+        try {
             $client = mongoDB::getClient();
             $database = mongoDB::getDatabase();
     
             $collection = $database->users;
     
-            // Hash the password for security
             $passwordHash = password_hash($password, PASSWORD_BCRYPT);
     
             $newUser = [
@@ -64,13 +65,14 @@ class UserService {
     
             $insertOneResult = $collection->insertOne($newUser);
             return $insertOneResult->getInsertedCount() > 0;
+        } catch(PDOException $e) { 
+            exit( 'PDO error ' . $e->getMessage() ); 
         }
-        catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
     }
     
 
-    function isAdmin($username){
-        try{
+    function isAdmin($username) {
+        try {
             $client = mongoDB::getClient();
             $database = mongoDB::getDatabase();
     
@@ -83,8 +85,9 @@ class UserService {
             } else {
                 return false;
             }
+        } catch(PDOException $e) { 
+            exit( 'PDO error ' . $e->getMessage() ); 
         }
-        catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
     }
 
     public function doesUsernameExist($username) {
@@ -101,16 +104,14 @@ class UserService {
         }
     }
 
-    function generateRandomString($length = 10)
-    {
-    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $charactersLength = strlen($characters);
-    $randomString = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, $charactersLength - 1)];
-        }
-    return $randomString;
+    function generateRandomString($length = 10) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+            for($i = 0; $i < $length; $i++) {
+                $randomString .= $characters[rand(0, $charactersLength - 1)];
+            }
+        return $randomString;
     }
-
 };
 ?>

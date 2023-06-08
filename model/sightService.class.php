@@ -13,18 +13,18 @@ class SightService {
 
 	private $mongoAttraction = null;
     private $neo4jSession = null;
-	public function __construct(){}
+	public function __construct() {}
 
-	private function getNeoSession(){
-        if($this->neo4jSession === null){
+	private function getNeoSession() {
+        if($this->neo4jSession === null) {
             require_once __SITE_PATH . '/app/database/neo4j.class.php';
             $this->neo4jSession = Neo4jDB::getConnection();
         }
         return $this->neo4jSession;
     }
-    private function getMongoAttractions(){
+    private function getMongoAttractions() {
 
-        if($this->mongoAttraction === null){
+        if($this->mongoAttraction === null) {
             require_once __SITE_PATH . '/app/database/mongodb.class.php';
             $mongo_Database = mongoDB::getDatabase();
             $this->mongoAttraction = $mongo_Database->attractions;
@@ -32,17 +32,17 @@ class SightService {
         return $this->mongoAttraction;
     }
 
-	function getAllSights(){
-		
-		try{
+	function getAllSights() {
+		try {
 			$collection = $this->getMongoAttractions();
 			$documents = $collection->find();
+		} catch(PDOException $e) { 
+			exit( 'PDO error ' . $e->getMessage() ); 
 		}
-		catch(PDOException $e){ exit( 'PDO error ' . $e->getMessage() ); }
 		
 		$arr = array();
 
-		foreach($documents as $document){
+		foreach($documents as $document) {
 			$arr[] = new sight($document["_id"], $document["name"], $document["description"], $document["image_path"], $document["x_coordinate"], $document["y_coordinate"]);
 		}
 		return $arr;
@@ -50,18 +50,17 @@ class SightService {
 
 	function getShortestPath($attractionList, $firstSelected) {
 		try {
-			if($attractionList !== [$firstSelected]){
+			if($attractionList !== [$firstSelected]) {
 				$attractionList = array_diff($attractionList, [$firstSelected]);
 
 				$neoDatabase = $this->getNeoSession();
 				$idList = array();
 
 				$sizeOfAttractionList = count($attractionList);
-
 				
 				$idList[] = $firstSelected;
 
-				for( $i = 0; $i < $sizeOfAttractionList; ++$i){
+				for( $i = 0; $i < $sizeOfAttractionList; ++$i) {
 					$params = [
 						'attractionIds' => array_values($attractionList),
 						'firstSelected' => $firstSelected,
@@ -76,16 +75,14 @@ class SightService {
 					if($results->isEmpty()) {
 						error_log("Unable to create shortest path");
 					}
-					else{
+					else {
 						$firstSelected = $results->first()['next.id'];
 						$attractionList = array_diff($attractionList, [(string)$firstSelected]);
 						$idList[] = $firstSelected;
 					}
-
-					
 				}
 			}
-			else{
+			else {
 				$idList = array();
 			}
 			$collection = $this->getMongoAttractions();
@@ -104,13 +101,13 @@ class SightService {
 							$document["y_coordinate"]	
 						);
 					
-				} catch (Exception $e) {
+				} catch(Exception $e) {
 					exit();
 				}
 			}
 			
 			return $arr;
-		} catch (Exception $e) {
+		} catch(Exception $e) {
 			exit('Error: ' . $e->getMessage());
 		}
 }

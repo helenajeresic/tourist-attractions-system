@@ -5,7 +5,7 @@ function validateForm() {
     var yKoordinata = document.getElementById('y-koordinata').value;
     var slika = document.getElementById('slika').value;
 
-    if (naziv === '' || opis === '' || xKoordinata === '' || yKoordinata === '' || slika === '') {
+    if(naziv === '' || opis === '' || xKoordinata === '' || yKoordinata === '' || slika === '') {
         alert('Molimo ispunite sva polja!');
         return false;
     }

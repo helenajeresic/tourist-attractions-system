@@ -2,7 +2,7 @@
     require_once __SITE_PATH . '/view/_header.php';
     require_once __SITE_PATH . '/model/sight.class.php';
 
-    if($shortest_path === null || $shortest_path === false){
+    if($shortest_path === null || $shortest_path === false) {
     
 ?>
 

@@ -11,54 +11,51 @@ class AdminService {
 
     private $mongoAttraction = null;
     private $neo4jSession = null;
-
     private $sightService = null;
-    public function __construct(){}
+    public function __construct() {}
 
-    private function getSightService(){
-        if($this->sightService === null){
+    private function getSightService() {
+        if($this->sightService === null) {
             $this->sightService = new SightService();
         }
         return $this->sightService;
     }
-    private function getNeoSession(){
-        if($this->neo4jSession === null){
+    private function getNeoSession() {
+        if($this->neo4jSession === null) {
             require_once __SITE_PATH . '/app/database/neo4j.class.php';
             $this->neo4jSession = Neo4jDB::getConnection();
         }
         return $this->neo4jSession;
     }
-    private function getMongoAttractions(){
+    private function getMongoAttractions() {
 
-        if($this->mongoAttraction === null){
+        if($this->mongoAttraction === null) {
             require_once __SITE_PATH . '/app/database/mongodb.class.php';
             $mongo_Database = mongoDB::getDatabase();
             $this->mongoAttraction = $mongo_Database->attractions;
         }
         return $this->mongoAttraction;
     }
-    //obrisi
-    function deleteMongoDB($delete){
+    function deleteMongoDB($delete) {
         $collection = $this->getMongoAttractions();
 
         try {
             $filter = ["_id" => new MongoDB\BSON\ObjectId($delete)];	
 
             $collection->deleteOne($filter);            
-        } catch (Exception $e) {
+        } catch(Exception $e) {
             exit();
         }
     }
 
-    function deleteNeo4j($delete){
+    function deleteNeo4j($delete) {
         $session = $this->getNeoSession();
         $param = ['id1' => new MongoDB\BSON\ObjectId($delete)];
         $query = 'MATCH (a:Attraction {id: $id1}) DETACH DELETE a;';
         $session->run($query, $param);
     }
 
-    //stavi sliku na aws
-    function processImageUpload(){
+    function processImageUpload() {
         require_once __SITE_PATH . '/app/start.php';
         if(isset($_FILES['slika'])) {
             $file = $_FILES['slika'];
@@ -78,7 +75,7 @@ class AdminService {
                     'Body' => fopen($tmp_file_path, 'rb')
                 ]);
                 unlink($tmp_file_path);
-            } catch(exception $e){
+            } catch(exception $e) {
                 die("There was an exception" . $e);
             }
         }
@@ -87,7 +84,6 @@ class AdminService {
         }
     }
 
-    //upload
     function addUploadToDatabases() : bool {
         require_once __SITE_PATH . '/vendor/autoload.php';
         require_once __SITE_PATH . '/app/database/mongodb.class.php';
@@ -99,16 +95,13 @@ class AdminService {
         (int)$y_koordinata = $_POST['y-koordinata'];
         $image_path = $_FILES['slika'];
         
-
         $filter = ['name' => $naziv];
         $result_name = $collection->findOne($filter);
 
         $filter = ['x_coordinate' => $x_koordinata, 'y_coordinate' => $y_koordinata] ;
         $result_coord = $collection->findOne($filter);
 
-
-        if ($result_name === null && $result_coord === null) {
-            
+        if($result_name === null && $result_coord === null) {    
             $this->processImageUpload();
             $id = new MongoDB\BSON\ObjectId();
             $document = [
@@ -128,7 +121,7 @@ class AdminService {
         }
     }
 
-    function addToNeo4j($addId , $x_koordinata, $y_koordinata){
+    function addToNeo4j($addId , $x_koordinata, $y_koordinata) {
         $session = $this->getNeoSession();
 
         $query = (string)'CREATE (n:Attraction {id: $addId, x_coordinate: $x_koordinata, y_coordinate: $y_koordinata});';
@@ -147,7 +140,6 @@ class AdminService {
         , $param) ;
     }
 
-    //update
     function updateName($id, $name) {
         $collection = $this->getMongoAttractions();
 
@@ -166,7 +158,6 @@ class AdminService {
 
     function updateImage($id, $image) {
         $this->processImageUpload();
-        //promijeni u bazi ime slike
         $collection = $this->getMongoAttractions();
 
         $filter = ['_id' => new MongoDB\BSON\ObjectId($id)];
@@ -179,7 +170,7 @@ class AdminService {
         return $distance;
     }
 
-    function updateCoordinates($id, $xcoord, $ycoord){
+    function updateCoordinates($id, $xcoord, $ycoord) {
         $session = $this->getNeoSession();
 
         $collection = $this->getMongoAttractions();

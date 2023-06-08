@@ -4,13 +4,13 @@ require_once __SITE_PATH .  '/model/sight.class.php';
 require_once __SITE_PATH .  '/model/sightService.class.php';
 
 class sightsController extends BaseController {
-    public function index(){
-        if(!isset($_SESSION["user"])){
+    public function index() {
+        if(!isset($_SESSION["user"])) {
             $this->registry->template->title = "Login";
             $this->registry->template->error = false;
             $this->registry->template->show("login");
         }
-        else{
+        else {
             $this->registry->template->title = "Sights";
             $this->registry->template->error = false;
 
@@ -37,13 +37,13 @@ class sightsController extends BaseController {
 
     public function processSelectForm() {
         $selectedList = array();
-        if (isset($_POST['lang'])) {           
-            foreach ($_POST['lang'] as $selected) {
+        if(isset($_POST['lang'])) {           
+            foreach($_POST['lang'] as $selected) {
                 $selectedList[] = $selected;
             }
             
         }
-        if(isset($_POST['lan'])){
+        if(isset($_POST['lan'])) {
             $firstSelected = $_POST['lan'];
         }
         $this->processSelect($selectedList,$firstSelected );
@@ -60,7 +60,7 @@ class sightsController extends BaseController {
 
         
         $show = $ss->getShortestPath($selectedList, $firstSelected);
-        if($show === null){
+        if($show === null) {
             $this->registry->template->error = true;
             echo "nisu dobro obradene znamenitorsti";
         }

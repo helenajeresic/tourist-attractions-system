@@ -1,9 +1,10 @@
 <?php require_once __SITE_PATH . '/view/_header.php';
-if (isset($_SESSION['error'])) {
+if(isset($_SESSION['error'])) {
     echo $_SESSION['error'];
     unset($_SESSION['error']);
 }
 ?>
+
 <script src="<?php echo __SITE_URL . 'util/validateRequiredForm.js'; ?>"></script>
     <form action="<?php echo __SITE_URL . 'index.php?rt=upload/processUpload'?>" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
          <h3>Učitaj novu atrakciju:</h3>
