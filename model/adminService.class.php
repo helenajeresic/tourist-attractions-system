@@ -131,7 +131,7 @@ class AdminService {
     function addToNeo4j($addId , $x_koordinata, $y_koordinata){
         $session = $this->getNeoSession();
 
-        $query = (string)'CREATE (n:Node {id: $addId, x_coordinate: $x_koordinata, y_coordinate: $y_koordinata});';
+        $query = (string)'CREATE (n:Attraction {id: $addId, x_coordinate: $x_koordinata, y_coordinate: $y_koordinata});';
         $param = ['addId' => $addId, 'x_koordinata' => $x_koordinata, 'y_koordinata' => $y_koordinata ];
         $session->run($query, $param);
 
