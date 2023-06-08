@@ -56,7 +56,7 @@ for($i = 0; $i < count($attractionList); ++$i) {
     for($j = $i + 1; $j < count($attractionList); ++$j) {
         $calcDist = euclideanDistance($attractionList[$i][1], $attractionList[$i][2], $attractionList[$j][1], $attractionList[$j][2]);
 
-        $query1 = 'MATCH (a1:Attraction {id: $id1}), (a2:Attraction {id: $id2}) CREATE (a1)-[d:DISTANCE]->(a2) SET d.attribute = $dist';
+        $query1 = 'MATCH (a1:Attraction {id: $id1}), (a2:Attraction {id: $id2}) CREATE (a1)-[d:DISTANCE]->(a2), (a2)-[d1:DISTANCE]->(a1)  SET d.attribute = $dist, d1.attribute = $dist';
         $params1 = ['id1' => $attractionList[$i][0], 'id2' => $attractionList[$j][0], 'dist' => (int)$calcDist];
         $result1 = $session->run($query1, $params1);
     }
